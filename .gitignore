@@ -1,2 +1,5 @@
 #Ignore pyCahe
 __pycache__
+
+#Estou usando o pycharm por isso estou ignorando o commit da pasta .idea
+.idea
