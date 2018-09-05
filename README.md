@@ -2,7 +2,7 @@ Testado no windows 64 bits com o simpleTest
 
 Adicionados libs para MAC e Linux
 
-Porta setada para remote API: 19990
+Porta setada para remote API: 25100
 
 Para alterar a porta deve-se modificar o arquivo remoteApiConnections.txt na raíz da pasta de instalação do V-REP
 
@@ -15,3 +15,6 @@ Whl retirados de https://www.lfd.uci.edu/~gohlke/pythonlibs/
 
 - OpenCV 3.4.3
   pip install "opencv_python-3.4.3-cp37-cp37m-win_amd64.whl"
+
+Para rodar o script em python deve-se desabilitar o script em LUA.
+A porta não deve ser a mesma que em remoteAPIConnections.txt
