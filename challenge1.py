@@ -11,6 +11,9 @@ except:
     print ('')
 
 import time
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
 
 print("Simulação iniciada!!")
 vrep.simxFinish(-1) #fecha todas as conexões existentes
@@ -24,14 +27,41 @@ if clientID != -1:
 
     errCode, leftMotor = vrep.simxGetObjectHandle(clientID,'Pioneer_p3dx_leftMotor',vrep.simx_opmode_oneshot_wait)
     errCode, rightMotor = vrep.simxGetObjectHandle(clientID, 'Pioneer_p3dx_rightMotor', vrep.simx_opmode_oneshot_wait)
+    errCode, cam = vrep.simxGetObjectHandle(clientID, 'camera', vrep.simx_opmode_oneshot_wait)
 
-    #braitenbergL = [-0.2, -0.4, -0.6, -0.8, -1, -1.2, -1.4, -1.6, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    #braitenbergR = [-1.6, -1.4, -1.2, -1, -0.8, -0.6, -0.4, -0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    v0 = 2
+    startTime = time.time()
 
-    res1 = vrep.simxSetJointTargetVelocity(clientID, leftMotor, 0.2, vrep.simx_opmode_streaming)
-    res2 = vrep.simxSetJointTargetVelocity(clientID, rightMotor, 0.2, vrep.simx_opmode_streaming)
+    res1 = vrep.simxSetJointTargetVelocity(clientID, leftMotor, 0, vrep.simx_opmode_streaming)
+    res2 = vrep.simxSetJointTargetVelocity(clientID, rightMotor, 0.5, vrep.simx_opmode_streaming)
 
+    errCode, resolution, image = vrep.simxGetVisionSensorImage(clientID, cam, 0, vrep.simx_opmode_streaming)
+
+    #while time.time()-startTime < 5:
+    while vrep.simxGetConnectionId(clientID)!=-1:
+        res, resolution, image = vrep.simxGetVisionSensorImage(clientID, cam, 0, vrep.simx_opmode_buffer)
+        if res == vrep.simx_return_ok:
+            plt.figure()
+            im = np.array(image, dtype=np.uint8)#Create a numpy array with uint8 type
+            im.resize([resolution[1], resolution[0],3])#resize the array to the resolution
+            edges = cv2.Canny(im,150, 300)
+
+            lines = cv2.HoughLines(edges, 1, np.pi / 180, 200)
+            if not (lines is None):
+                for rho, theta in lines[0]:
+                    a = np.cos(theta)
+                    b = np.sin(theta)
+                    x0 = a * rho
+                    y0 = b * rho
+                    x1 = int(x0 + 1000 * (-b))
+                    y1 = int(y0 + 1000 * (a))
+                    x2 = int(x0 - 1000 * (-b))
+                    y2 = int(y0 - 1000 * (a))
+
+                    cv2.line(im, (x1, y1), (x2, y2), (0, 0, 255), 2)
+
+
+                plt.imshow(im, origin='lower', cmap='gray')
+                plt.show()
 
 
     # Before closing the connection to V-REP, make sure that the last command sent out had time to arrive. You can guarantee this with (for example):
