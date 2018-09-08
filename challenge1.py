@@ -43,24 +43,38 @@ if clientID != -1:
             plt.figure()
             im = np.array(image, dtype=np.uint8)#Create a numpy array with uint8 type
             im.resize([resolution[1], resolution[0],3])#resize the array to the resolution
-            edges = cv2.Canny(im,150, 300)
 
-            lines = cv2.HoughLines(edges, 1, np.pi / 180, 200)
+            #blur = cv2.blur(im, (5,5))
+            #plt.imshow(blur, origin='lower', cmap='gray')
+            #plt.show()
+            edges = cv2.Canny(im,130, 300)
+
+            plt.imshow(edges, origin='lower',  cmap='gray')
+            plt.show()
+
+            lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 10, 100, 10)
+
+            print(lines)
             if not (lines is None):
-                for rho, theta in lines[0]:
-                    a = np.cos(theta)
-                    b = np.sin(theta)
-                    x0 = a * rho
-                    y0 = b * rho
-                    x1 = int(x0 + 1000 * (-b))
-                    y1 = int(y0 + 1000 * (a))
-                    x2 = int(x0 - 1000 * (-b))
-                    y2 = int(y0 - 1000 * (a))
+                for i in range(len(lines)):
+                    #for rho, theta in lines[i]:
 
-                    cv2.line(im, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                       # a = np.cos(theta)
+                       # b = np.sin(theta)
+                        #x0 = a * rho
+                        #y0 = b * rho
+                       # x1 = int(x0 + 1000 * (-b))
+                        #y1 = int(y0 + 1000 * (a))
+                       # x2 = int(x0 - 1000 * (-b))
+                        #y2 = int(y0 - 1000 * (a))
 
+                        #cv2.line(im, (x1, y1), (x2, y2), (0, 0, 255), 2)
+                        
 
-                plt.imshow(im, origin='lower', cmap='gray')
+                    for x1, y1, x2, y2 in lines[i]:
+                        cv2.line(im, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+                plt.imshow(im, origin='lower')
                 plt.show()
 
 
