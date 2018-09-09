@@ -40,17 +40,20 @@ if clientID != -1:
     while vrep.simxGetConnectionId(clientID)!=-1:
         res, resolution, image = vrep.simxGetVisionSensorImage(clientID, cam, 0, vrep.simx_opmode_buffer)
         if res == vrep.simx_return_ok:
-            plt.figure()
+            # plt.figure()
             im = np.array(image, dtype=np.uint8)#Create a numpy array with uint8 type
             im.resize([resolution[1], resolution[0],3])#resize the array to the resolution
 
             #blur = cv2.blur(im, (5,5))
             #plt.imshow(blur, origin='lower', cmap='gray')
             #plt.show()
-            edges = cv2.Canny(im,130, 300)
+            edges = cv2.Canny(im, 50, 200)
 
-            plt.imshow(edges, origin='lower',  cmap='gray')
-            plt.show()
+            # plt.imshow(edges, origin='lower',  cmap='gray')
+            # plt.show()
+
+            cv2.imshow('image', cv2.flip(edges, 0))
+            cv2.waitKey(1)
 
             lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 10, 100, 10)
 
@@ -74,8 +77,11 @@ if clientID != -1:
                     for x1, y1, x2, y2 in lines[i]:
                         cv2.line(im, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
-                plt.imshow(im, origin='lower')
-                plt.show()
+                # plt.imshow(im, origin='lower')
+                # plt.show()
+
+                cv2.imshow('image1', cv2.flip(im, 0))
+                cv2.waitKey(1)
 
 
     # Before closing the connection to V-REP, make sure that the last command sent out had time to arrive. You can guarantee this with (for example):
@@ -83,5 +89,7 @@ if clientID != -1:
 
     # Now close the connection to V-REP:
     vrep.simxFinish(clientID)
+
+    cv2.destroyAllWindows()
 else:
     print("Falha na conexão com o servidor remote API")
