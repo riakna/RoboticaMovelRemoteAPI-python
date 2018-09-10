@@ -71,13 +71,19 @@ for x in range(0, 16):
         if (returnCode==0):
             break
     sensor_position.append((position[0], position[1]))
+    
+    
+def setVelocity(left, right):
+    vrep.simxSetJointTargetVelocity(clientID, left_motor_handle, left, vrep.simx_opmode_streaming)
+    vrep.simxSetJointTargetVelocity(clientID, right_motor_handle, right, vrep.simx_opmode_streaming)
 
+setVelocity(2, 2)
 t = time.time()
+turning_left = False;
+turning_right = False;
 
-errorCode = vrep.simxSetJointTargetVelocity(clientID, left_motor_handle, 2, vrep.simx_opmode_streaming)
-errorCode = vrep.simxSetJointTargetVelocity(clientID, right_motor_handle, 2, vrep.simx_opmode_streaming)
 
-while (time.time()-t) < 3000:
+while (time.time()-t) < 30:
     
     
     sensor_val = []
@@ -104,8 +110,10 @@ while (time.time()-t) < 3000:
             # Coordadena do obstaculo é dado pela posicão global do
             # sonar (global robo + relativo sonar) + a projeção 
             # da distancia detectada nos eixos
-            x_obstacle = position[0] + sensor_position[x-1][0] + (distance * np.cos(eulerAngles[2]+sensor_angle[x-1]))
-            y_obstacle = position[1] + sensor_position[x-1][1] + (distance * np.sin(eulerAngles[2]+sensor_angle[x-1]))
+            #x_obstacle = position[0] + sensor_position[x-1][0] + (distance * np.cos(eulerAngles[2]+sensor_angle[x-1]))
+            #y_obstacle = position[1] + sensor_position[x-1][1] + (distance * np.sin(eulerAngles[2]+sensor_angle[x-1]))
+            y_obstacle = detectedPoint[1] +position[1]
+            x_obstacle = detectedPoint[0] +position[0]
             
             generated_x_map.append(x_obstacle)
             generated_y_map.append(y_obstacle)
@@ -113,38 +121,29 @@ while (time.time()-t) < 3000:
         else:
             sensor_val.append(np.inf)
             
-    plt.scatter(generated_x_map, generated_y_map)
-    plt.show()
-    
     # Pega o menor valor dos sensores
     min_ind = np.where(np.array(sensor_val)==np.min(sensor_val))
     min_ind = min_ind[0][0]
     
     # se o menor valor é dos sensores frontais
-    if (sensor_val[min_ind] < 0.5) and (0 < min_ind < 7):
-        if (0 < min_ind <= 3):
-            errorCode = vrep.simxSetJointTargetVelocity(clientID, 
-                left_motor_handle, 1, vrep.simx_opmode_streaming)
-            errorCode = vrep.simxSetJointTargetVelocity(clientID, 
-                right_motor_handle, 0, vrep.simx_opmode_streaming)
-        elif (4 <= min_ind < 7):
-            errorCode = vrep.simxSetJointTargetVelocity(clientID, 
-                left_motor_handle, 0, vrep.simx_opmode_streaming)
-            errorCode = vrep.simxSetJointTargetVelocity(clientID, 
-                right_motor_handle, 1, vrep.simx_opmode_streaming)
+    if (sensor_val[min_ind] < 0.6) and (0 < min_ind < 7):
+        if (0 < min_ind <= 3) and not turning_right:
+            setVelocity(1, -1)
+            turning_left = True
+        elif (4 <= min_ind < 7) and not turning_left:
+            setVelocity(-1, 1)
+            turning_right = True
     else:
-        errorCode = vrep.simxSetJointTargetVelocity(clientID, 
-            left_motor_handle, 2, vrep.simx_opmode_streaming)
-        errorCode = vrep.simxSetJointTargetVelocity(clientID, 
-            right_motor_handle, 2, vrep.simx_opmode_streaming)
-    
+        setVelocity(2, 2)
+        turning_left = False;
+        turning_right = False;
+        
+    plt.scatter(generated_x_map, generated_y_map, s=2)
+    plt.show()
     #Considere execucao do loop a cada 0.2 segundos (= 5 Hz)
-    time.sleep(0.1)
+    time.sleep(0.2)
     
-plt.scatter(generated_x_map, generated_y_map)
+plt.scatter(generated_x_map, generated_y_map, s=2)
 plt.show()
 
-errorCode = vrep.simxSetJointTargetVelocity(clientID, left_motor_handle, 0, vrep.simx_opmode_streaming)
-errorCode = vrep.simxSetJointTargetVelocity(clientID, right_motor_handle, 0, vrep.simx_opmode_streaming)
-
-
+setVelocity(0, 0)
