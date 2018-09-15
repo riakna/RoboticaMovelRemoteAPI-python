@@ -1,4 +1,12 @@
-Testado no windows 64 bits com o simpleTest
+# MO651
+
+## mapeamento_brick.py
+
+Fechei as portas do ambiente e coloquei para exibir os sensores.
+
+Após executar, permanece rodando até um keypress (com return).
+
+## Testado no windows 64 bits com o simpleTest
 
 Adicionados libs para MAC e Linux
 
