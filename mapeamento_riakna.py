@@ -121,10 +121,10 @@ if clientID != -1:
         print(math.degrees(robot_angle))
 
         x_laser = np.append(x_laser, laser_array[:,0]*np.cos(robot_angle)-laser_array[:,1]*np.sin(robot_angle)+position[0])
-        y_laser = np.append(y_laser, laser_array[:,0]*np.sin(robot_angle)-laser_array[:,1]*np.cos(robot_angle)+position[1])
+        y_laser = np.append(y_laser, laser_array[:,0]*np.sin(robot_angle)+laser_array[:,1]*np.cos(robot_angle)+position[1])
 
 
-        plt.scatter(x_laser, -1*y_laser, s=2)
+        plt.scatter(x_laser, y_laser, s=2)
         plt.pause(0.05)
 
         for i in range(1,16+1):
