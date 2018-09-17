@@ -24,13 +24,6 @@ class Robot:
             'last': [None] * 3
     }
     
-    # Odometry
-    odometryPosOrn = {
-            'raw': [None] * 3,
-            'compass':  [None] * 3
-    }
-    lastTime = None
-    
     
     # Constants
     SONAR_POSITIONS = [None] * 16   
@@ -41,10 +34,8 @@ class Robot:
                        150/180.0*PI, 130/180.0*PI, PI/2]) 
     
     L = None
+    L2 = None
     R = None
-    
-    # L = 0.3309488597888182
-    # R = 0.09749898314476013
     
     def __init__(self):
 
@@ -84,8 +75,7 @@ class Robot:
         self.sim.initJointPositionStream(self.motorHandle[0])
         self.sim.initJointPositionStream(self.motorHandle[1])
         
-        
-        
+
         ### -----------
         ### POSTIONS    
         
@@ -97,8 +87,9 @@ class Robot:
         self.L = np.linalg.norm(self.sim.getObjectPositionBlock(
                 self.wheelHandle[0], self.wheelHandle[1]))
         
-        #self.L = 0.36205;
         
+        self.L2 = -self.sim.getObjectPositionBlock(self.wheelHandle[0], self.robotHandle)[0]
+                
         # Robo precisa estar no chão para pegar o raio
         self.R = self.sim.getObjectPositionBlock(self.wheelHandle[0], -1)[2]
         #self.R = 0.09749898314476013
@@ -107,25 +98,40 @@ class Robot:
         self.robotPosOrn['first']  = self.getPosOrn()
         
         # Odometry
-        self.odometryPosOrn['raw']      = self.robotPosOrn['first']
-        self.odometryPosOrn['compass']  = self.robotPosOrn['first']
-        self.lastTime = time.time()
-        self.wl = 0
-        self.wr = 0
-        self.encoderPos = [None] * 2
-        self.encoderPos[0] = self.sim.getJointPosition(self.motorHandle[0])
-        self.encoderPos[1] = self.sim.getJointPosition(self.motorHandle[1])
+        self.odometryPosOrn = {}
+        self.odometryPosOrn['raw']              = self.robotPosOrn['first']
+        self.odometryPosOrn['encoder']          = self.robotPosOrn['first']
+        self.odometryPosOrn['compass']          = self.robotPosOrn['first']
+        self.odometryPosOrn['encoder_compass']  = self.robotPosOrn['first']
         
-    def getJoint(self):
-        return self.sim.getJointPosition(self.motorHandle[0])
+        self.odometryEncoder = {}
+        self.odometryEncoder['encoder'] = [None] * 2
+        self.odometryEncoder['encoder'][0] = self.sim.getJointPosition(self.motorHandle[0])
+        self.odometryEncoder['encoder'][1] = self.sim.getJointPosition(self.motorHandle[1])
+        self.odometryEncoder['compass'] = [None] * 2
+        self.odometryEncoder['compass'][0] = self.sim.getJointPosition(self.motorHandle[0])
+        self.odometryEncoder['compass'][1] = self.sim.getJointPosition(self.motorHandle[1])
+        self.odometryEncoder['encoder_compass'] = [None] * 2
+        self.odometryEncoder['encoder_compass'][0] = self.sim.getJointPosition(self.motorHandle[0])
+        self.odometryEncoder['encoder_compass'][1] = self.sim.getJointPosition(self.motorHandle[1])
         
-    def getLinearVelocity(self):
-        return np.linalg.norm(self.sim.getObjectVelocity(self.robotHandle)[0][:2])
         
+        self.odometryTimeRaw = time.time()
+        self.odometryTimeCompass = time.time()
+        self.odometryTimeEncoderCompass = time.time()
+ 
+        self.motorW = [None] * 2
+        self.motorW[0] = 0
+        self.motorW[1] = 0
+        
+    
+    ### -----------
+    ### DRIVE  
+    
     def move(self, left, right):
-        #self.computeOdomety()
-        self.wl = 2 * left
-        self.wr = 2 * right
+        self.computeOdometry()
+        self.motorW[0] = left
+        self.motorW[1] = right
         self.sim.setJointTargetVelocity(self.motorHandle[0], left)
         self.sim.setJointTargetVelocity(self.motorHandle[1], right)
         
@@ -140,7 +146,113 @@ class Robot:
     
     def vLToDrive(self, vLinear, vAngular):
         return (((2*vLinear)-(self.L*vAngular))/2*self.R);
+    
+    ### -----------
+    ### SONAR  
+
+    def readSonars(self):
+        pointCloud = []
+        distances = []
         
+        for i in range(0, len(self.sonarHandle)):
+            state, distance = self.sim.readProximitySensor(self.sonarHandle[i])
+
+            if (state == True):
+                x = self.SONAR_POSITIONS[i][0] + (distance * np.cos(self.SONAR_ANGLES[i]))
+                y = self.SONAR_POSITIONS[i][1] + (distance * np.sin(self.SONAR_ANGLES[i]))
+                pointCloud.append((x, y))
+                distances.append(distance)
+            else:
+                pointCloud.append((np.inf, np.inf))
+                distances.append(np.inf)
+ 
+        return distances, pointCloud
+    
+    
+    
+    
+    ### -----------
+    ### ODOMETRY  
+    
+    def _computeMotorAngularDisplacement(self, i, name):
+        posF = self.sim.getJointPosition(self.motorHandle[i])
+        posI = self.odometryEncoder[name][i]
+        self.odometryEncoder[name][i] = posF
+        
+        diff = posF - posI
+        
+        if (diff >= np.pi):
+            diff = 2*np.pi - diff
+        elif (diff <= -np.pi):
+            diff = 2*np.pi + diff
+        
+        return diff
+    
+    def _computeOdometry(self, posOrn, thetaL, thetaR, deltaTheta):
+        deltaS = self.R * (thetaR + thetaL) / 2
+        
+        if deltaTheta is None:
+            deltaTheta = self.R * (thetaR - thetaL) / self.L
+        
+        angle = posOrn[2] + (deltaTheta/2)
+        
+        return posOrn + np.array(
+                [deltaS * np.cos(angle) - deltaTheta* self.L2 * np.sin(angle), 
+                 deltaS * np.sin(angle) + deltaTheta* self.L2 * np.cos(angle), 
+                 deltaTheta])
+        
+    def computeOdometry(self):
+        
+        deltaTime = time.time() - self.odometryTimeRaw
+        self.odometryTimeRaw = time.time() 
+        
+        thetaL = self.motorW[0] * deltaTime
+        thetaR = self.motorW[1] * deltaTime
+        
+        self.odometryPosOrn['raw'] = self._computeOdometry(
+                self.odometryPosOrn['raw'], thetaL, thetaR, None)
+        
+    def computeOdometryEncoder(self):
+        thetaL = self._computeMotorAngularDisplacement(0, 'encoder')
+        thetaR = self._computeMotorAngularDisplacement(1, 'encoder')
+
+        self.odometryPosOrn['encoder'] = self._computeOdometry(
+                self.odometryPosOrn['encoder'], thetaL, thetaR, None)
+         
+    def computeOdometryCompass(self):
+        
+        deltaTime = time.time() - self.odometryTimeCompass
+        self.odometryTimeCompass = time.time() 
+        
+        thetaL = self._computeMotorAngularDisplacement(0, 'compass')
+        thetaR = self._computeMotorAngularDisplacement(1, 'compass')
+        deltaTheta = self.sim.getFloatSignal("gyroZ") * deltaTime
+        
+        self.odometryPosOrn['compass'] = self._computeOdometry(
+                self.odometryPosOrn['compass'], thetaL, thetaR, deltaTheta)
+        
+    def computeOdometryEncoderCompass(self):
+        
+        deltaTime = time.time() - self.odometryTimeEncoderCompass
+        self.odometryTimeEncoderCompass = time.time() 
+        
+        thetaL = self._computeMotorAngularDisplacement(0, 'encoder_compass')
+        thetaR = self._computeMotorAngularDisplacement(1, 'encoder_compass')
+        deltaThetaCompass = self.sim.getFloatSignal("gyroZ")  * deltaTime        
+        deltaThetaEncoder = self.R * (thetaR - thetaL) / self.L
+        
+        self.odometryPosOrn['encoder_compass'] = self._computeOdometry(
+                self.odometryPosOrn['encoder_compass'], thetaL, thetaR, (deltaThetaCompass + deltaThetaEncoder)/2)
+        
+    ### -----------
+    ### GETTERS  
+    
+    def localToGlobalGT(self, position):
+        return localToGlobal(self.getPosOrn(), position)
+    
+    def localToGlobalOdometry(self, position):
+        return localToGlobal(self.getPosOrn(), position)
+    
     def getPosOrn(self):
         x, y = self.sim.getObjectPosition(self.robotHandle, -1)[:2]
         orn = self.sim.getObjectOrientation(self.robotHandle, -1)[2]
@@ -152,98 +264,33 @@ class Robot:
     def getPosOrnOdometyCompass(self):
         return self.odometryPosOrn['compass']
     
-    def computeOdomety(self):
-        deltaTime = time.time() - self.lastTime
-        self.lastTime = time.time() 
-        
-        deltaS = deltaTime * self.R * (self.wr + self.wl) / 2
-        deltaTheta = deltaTime * self.R * (self.wr - self.wl) / self.L
-        
-        angle = self.odometryPosOrn['raw'][2] + (deltaTheta/2)
-                
-        self.odometryPosOrn['raw'] = self.odometryPosOrn['raw']  + np.array(
-                [deltaS * np.cos(angle), deltaS * np.sin(angle), deltaTheta])
+    def getPosOrnOdometyEncoder(self):
+        return self.odometryPosOrn['encoder']
     
-    def _computeAngularVelocityL(self):
-        posF = self.sim.getJointPosition(self.motorHandle[0])
-        posI = self.encoderPos[0]
-        
-        if (self.wl > 0) :
-            if (posF<0) and (posI>0):
-                posI = posI - 2 * np.pi
-        else: 
-            if (posF>0) and (posI<0):
-                posI = posI + 2 * np.pi
-               
-        self.encoderPos[0] = posF
-                
-        return posF - posI
+    def getPosOrnOdometyEncoderCompass(self):
+        return self.odometryPosOrn['encoder_compass']
     
-    def _computeAngularVelocityR(self):
-        posF = self.sim.getJointPosition(self.motorHandle[1])
-        posI = self.encoderPos[1]
-        
-        if (self.wl > 0) :
-            if (posF<0) and (posI>0):
-                posI = posI - 2 * np.pi
-        else: 
-            if (posF>0) and (posI<0):
-                posI = posI + 2 * np.pi
-               
-        self.encoderPos[1] = posF
-                
-        return posF - posI
-        
-    def computeOdometyEncoder(self):
-    
-        wl = self._computeAngularVelocityL()*2;
-        wr = self._computeAngularVelocityR()*2;
-        
-        print("Velocidades: {}, {}".format(wl, wr))
-        
-        deltaTime = time.time() - self.lastTime
-        self.lastTime = time.time() 
-        
-        deltaS = deltaTime * self.R * (wr + wl) / 2
-        deltaTheta = deltaTime * self.R * (wr - wl) / self.L
-        
-        angle = self.odometryPosOrn['raw'][2] + (deltaTheta/2)
-                
-        self.odometryPosOrn['raw'] = self.odometryPosOrn['raw']  + np.array(
-                [deltaS * np.cos(angle), deltaS * np.sin(angle), deltaTheta])
-        
-    
-    def readSonars(self):
-        pointCloud = []
-        distances = []
-        
-        for i in range(0, len(self.sonarHandle)):
-            state, distance = self.sim.readProximitySensor(self.sonarHandle[i])
-            
-            
-            
-            if (state == True):
-                x = self.SONAR_POSITIONS[i][0] + (distance * np.cos(self.SONAR_ANGLES[i]))
-                y = self.SONAR_POSITIONS[i][1] + (distance * np.sin(self.SONAR_ANGLES[i]))
-                pointCloud.append((x, y))
-                distances.append(distance)
-            else:
-                pointCloud.append((np.inf, np.inf))
-                distances.append(np.inf)
- 
-        return distances, pointCloud
-        
-    def localToGlobal(self, position):
-        x, y, angle = self.getPosOrn()
-        
-        cos = np.cos(angle)
-        sen = np.sin(angle)
-        
-        transformationMatrix = np.array([[cos, -sen, x], 
-                                        [sen, cos, y]])
-        
-        return np.matmul(transformationMatrix,
-                         np.concatenate((position, np.array([1]))))
+    def getLinearVelocity(self):
+        return np.linalg.norm(self.sim.getObjectVelocity(self.robotHandle)[0][:2])
+
+
+def localToGlobal(posOrnSource, pos):
+    x, y, angle = posOrnSource
     
     
+    cos = np.cos(angle)
+    sen = np.sin(angle)
+    
+    transformationMatrix = np.array([[cos, -sen, x], 
+                                    [sen, cos, y]])
+    
+    return np.matmul(transformationMatrix,
+                     np.concatenate((pos, np.array([1]))))
+
+
+
+
+
+
+
     

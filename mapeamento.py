@@ -83,7 +83,7 @@ turning_left = False;
 turning_right = False;
 
 
-while (time.time()-t) < 30:
+while (time.time()-t) < 60:
     
     
     sensor_val = []
@@ -95,14 +95,13 @@ while (time.time()-t) < 30:
         errorCode, detectionState, detectedPoint, detectedObjectHandle, detectedSurfaceNormalVector = vrep.simxReadProximitySensor(
             clientID, sensor_handle_list[x-1], vrep.simx_opmode_buffer)  
         distance = np.linalg.norm(detectedPoint)
-        
+
         # Posicao global do robo
         returnCode, position = vrep.simxGetObjectPosition(
             clientID, robot_handle, -1, vrep.simx_opmode_buffer)
         returnCode, eulerAngles = vrep.simxGetObjectOrientation(
             clientID, robot_handle, -1, vrep.simx_opmode_buffer)
-        
-        
+                
         if (detectionState == True):
             
             sensor_val.append(distance)
@@ -110,10 +109,10 @@ while (time.time()-t) < 30:
             # Coordadena do obstaculo é dado pela posicão global do
             # sonar (global robo + relativo sonar) + a projeção 
             # da distancia detectada nos eixos
-            #x_obstacle = position[0] + sensor_position[x-1][0] + (distance * np.cos(eulerAngles[2]+sensor_angle[x-1]))
-            #y_obstacle = position[1] + sensor_position[x-1][1] + (distance * np.sin(eulerAngles[2]+sensor_angle[x-1]))
-            y_obstacle = detectedPoint[1] +position[1]
-            x_obstacle = detectedPoint[0] +position[0]
+            x_obstacle = position[0] + sensor_position[x-1][0] + (distance * np.cos(eulerAngles[2]+sensor_angle[x-1]))
+            y_obstacle = position[1] + sensor_position[x-1][1] + (distance * np.sin(eulerAngles[2]+sensor_angle[x-1]))
+            #y_obstacle = detectedPoint[1] +position[1]
+            #x_obstacle = detectedPoint[0] +position[0]
             
             generated_x_map.append(x_obstacle)
             generated_y_map.append(y_obstacle)
@@ -127,12 +126,12 @@ while (time.time()-t) < 30:
     
     # se o menor valor é dos sensores frontais
     if (sensor_val[min_ind] < 0.6) and (0 < min_ind < 7):
-        if (0 < min_ind <= 3) and not turning_right:
+        #if (0 < min_ind <= 3) and not turning_right:
             setVelocity(1, -1)
             turning_left = True
-        elif (4 <= min_ind < 7) and not turning_left:
-            setVelocity(-1, 1)
-            turning_right = True
+        #elif (4 <= min_ind < 7) and not turning_left:
+        #    setVelocity(-1, 1)
+        #    turning_right = True
     else:
         setVelocity(2, 2)
         turning_left = False;

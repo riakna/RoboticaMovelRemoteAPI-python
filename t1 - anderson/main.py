@@ -19,37 +19,52 @@ turning_left = False
 turning_right = False
 
 while (time.time()-t) < 100:
-    
+        
     distances, point_cloud = robot.readSonars()
         
-    min_ind = np.where(distances[:8]==np.min(distances[:8]))
-    min_ind = min_ind[0][0]
+    cont_left = 0
+    cont_right = 0
     
-    # se o menor valor é dos sensores frontais
-    if (distances[min_ind] < 0.5):
-        if (0 <= min_ind < 4)  and not turning_right:
-            robot.drive(0, -5*np.pi)
-            turning_left = False
-        elif (4 <= min_ind <= 7)  and not turning_left:
-            robot.drive(0, +5*np.pi)
+    for i in range(1, 4):
+        if distances[i] < 0.4:
+            cont_left += 1
+            
+    for i in range(4, 7):
+        if distances[i] < 0.4:
+            cont_right += 1
+    
+    if (cont_left > 0) or (cont_right > 0):
+        if (cont_left >= cont_right) or turning_left:
+            robot.drive(0, -30)
+            turning_left = True
+        elif (cont_left < cont_right) or turning_right:
+            robot.drive(0, 30)
             turning_right = True
     else:
-        robot.drive(10, 0)
+        robot.drive(50, 0)
         turning_left = False
         turning_right = False
-                    
+    
     for x in range(0, len(point_cloud)):
         if (point_cloud[x] != (np.inf, np.inf)):
-            mapPoints.addObstacle(*robot.localToGlobal(point_cloud[x]))
-    
-    robot.computeOdometyEncoder()
+            mapPoints.addPoint('obstaclesSonar', *robot.localToGlobalGT(point_cloud[x]))
 
-    mapPoints.addPathGT(*robot.getPosOrn()[:2])
-    mapPoints.addPathRaw(*robot.getPosOrnOdometyRaw()[:2])
-    mapPoints.plot()
         
-    time.sleep(0.3)
+    time.sleep(0.001)
     
-mapPoints.plot()
+    robot.computeOdometry()
+    robot.computeOdometryEncoder()
+    robot.computeOdometryEncoderCompass()
+    robot.computeOdometryCompass()
+    
+    mapPoints.addPoint('robotPathGT', *robot.getPosOrn()[:2])
+    mapPoints.addPoint('robotPathRaw', *robot.getPosOrnOdometyRaw()[:2])
+    mapPoints.addPoint('robotPathEncoder', *robot.getPosOrnOdometyEncoder()[:2])
+    mapPoints.addPoint('robotPathCompass', *robot.getPosOrnOdometyCompass()[:2])
+    mapPoints.addPoint('robotPathEncoderCompass', *robot.getPosOrnOdometyEncoderCompass()[:2])
+    
+    #mapPoints.plotAll()
+    
+mapPoints.plotAll()
 mapPoints.saveData('test')
 robot.stop()

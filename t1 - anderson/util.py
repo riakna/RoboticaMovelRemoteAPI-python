@@ -6,47 +6,98 @@ Created on Thu Sep 13 19:27:01 2018
 """
 
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import numpy as np
 import pickle
 
 
 class Map:
+
+    points = {
+        'obstaclesSonar' : [],
+        'obstaclesLaser' : [],
+        'robotPathGT' : [],
+        'robotPathRaw': [],
+        'robotPathEncoder': [],
+        'robotPathCompass': [],
+        'robotPathEncoderCompass': []
+    }
     
-    obstacles = []
-    robotPathGT = []
-    robotPathRaw = []
-    robotPathCompass = []
+    color = {
+        'obstaclesSonar' : 'blue',
+        'obstaclesLaser' : 'hotpink',
+        'robotPathGT' : 'red',
+        'robotPathRaw': 'green',
+        'robotPathEncoder': 'limegreen',
+        'robotPathCompass': 'dodgerblue',
+        'robotPathEncoderCompass': 'orange'
+    }
+    
     
     def saveData(self, name):
         with open(name+'.pkl', 'wb') as f: 
-            pickle.dump([self.obstacles, self.robotPathGT, 
-                         self.robotPathRaw, self.robotPathCompass], f)
+            pickle.dump(self.points, f)
+            
+            
+        fig, ax = plt.subplots(figsize=(20, 20))
+        plt.gca().set_aspect('equal', adjustable='box')
+        
+
+
+        patches = []
+        for key, value in self.points.items():
+            if (len(value)>0):
+                pointsNp = np.array(value)
+                ax.scatter(pointsNp[:,0], pointsNp[:,1], color=self.color[key], s=5)
+                patches.append(mpatches.Patch(color=self.color[key], label=key))
+                
+        ax.legend(handles=patches,loc='upper right')
+        
+    
+        plt.savefig('temp.png')
+            
         
     def loadData(self, name):
         with open(name+'.pkl', 'rb') as f:
-            self.obstacles, self.robotPathGT, self.robotPathRaw, self.robotPathCompass = pickle.load(f)
-    
-    def addObstacle(self, x, y):
-        self.obstacles.append((x, y))
-    
-    def addPathGT(self, x, y):
-        self.robotPathGT.append((x, y))
-    
-    def addPathCompass(self, x, y):
-        self.robotPathCompass.append((x, y))
+            self.points = pickle.load(f)
+            
         
-    def addPathRaw(self, x, y):
-        self.robotPathRaw.append((x, y))
+    def addPoint(self, key, x, y):
+        self.points[key].append((x, y))
         
-    def plot(self):
-        _plot(self.obstacles, color='blue', s=3)
-        _plot(self.robotPathGT, color='red', s=2)
-        _plot(self.robotPathCompass, color='pink', s=3)
-        _plot(self.robotPathRaw, color='green', s=2)
+    def plotAll(self):        
+        
+        for key, value in self.points.items():
+            _plot(value, color=self.color[key], s=1, label=key)
 
         plt.show()
+        
+    def saveFig(self, keyList):
+        
+        
+        fig, ax = plt.subplots(figsize=(20, 20))
+        plt.gca().set_aspect('equal', adjustable='box')
+        
+        patches = []
+        for key in keyList:
+            if (len(self.points[key])>0):
+                pointsNp = np.array(self.points[key])
+                ax.scatter(pointsNp[:,0], pointsNp[:,1], color=self.color[key], s=5)
+                patches.append(mpatches.Patch(color=self.color[key], label=key))
+                
+        ax.legend(handles=patches,loc='upper right')
+        
+    
+        plt.savefig('temp.png')
+        
+
         
 def _plot(points, *args, **kwargs):
     if (len(points)>0):
         pointsNp = np.array(points)
         plt.scatter(pointsNp[:,0], pointsNp[:,1],  *args, **kwargs)
+        
+
+     
+    
+    
