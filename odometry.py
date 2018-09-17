@@ -7,14 +7,6 @@ import time
 
 PI = np.pi
 
-last_exec_time = 0
-
-# vrep
-clientID = 0
-robot_handle = 0
-left_motor_handle = 0
-right_motor_handle = 0
-
 # robot
 right_wheel_angle = 0
 left_wheel_angle = 0
@@ -23,24 +15,31 @@ pos_y = 0
 angle = 0
 
 class odometry(threading.Thread):
-	def __init__(self):
+	def __init__(self, clientID_, robot_handle_, left_motor_handle_, right_motor_handle_):
 		threading.Thread.__init__(self)
+
+		# global clientID, robot_handle, left_motor_handle, right_motor_handle
+
+		self.clientID = clientID_
+		self.robot_handle = robot_handle_
+		self.left_motor_handle = left_motor_handle_
+		self.right_motor_handle = right_motor_handle_
 
 		# from vrep
 		self.width = 0.33098
 		self.wheel_radius = 0.0975
 
 	def run(self):
-		global clientID, robot_handle, left_wheel_angle, right_wheel_angle, pos_x, pos_y, angle
+		global left_wheel_angle, right_wheel_angle, pos_x, pos_y, angle
 
 		_, position = vrep.simxGetObjectPosition(
-			clientID, robot_handle, -1, vrep.simx_opmode_buffer)
+			self.clientID, self.robot_handle, -1, vrep.simx_opmode_buffer)
 		_, eulerAngles = vrep.simxGetObjectOrientation(
-			clientID, robot_handle, -1, vrep.simx_opmode_buffer)
+			self.clientID, self.robot_handle, -1, vrep.simx_opmode_buffer)
 		_, new_right_wheel_angle = vrep.simxGetJointPosition(
-			clientID, right_motor_handle, vrep.simx_opmode_streaming)
+			self.clientID, self.right_motor_handle, vrep.simx_opmode_streaming)
 		_, new_left_wheel_angle = vrep.simxGetJointPosition(
-			clientID, left_motor_handle, vrep.simx_opmode_streaming)
+			self.clientID, self.left_motor_handle, vrep.simx_opmode_streaming)
 
 		pos_x = position[0]
 		pos_y = position[1]
@@ -54,21 +53,17 @@ class odometry(threading.Thread):
 		left_wheel_angle = new_left_wheel_angle
 		right_wheel_angle = new_right_wheel_angle
 
-		last_exec_time = time.time()
-
 		while True:
 			self.update()
 			time.sleep(0.0001)
 
 	def update(self):
-		global last_exec_time, clientID, right_motor_handle, left_motor_handle, left_wheel_angle, right_wheel_angle, pos_x, pos_y, angle
-
-		exec_time = time.time()
+		global last_exec_time, left_wheel_angle, right_wheel_angle, pos_x, pos_y, angle
 
 		_, new_right_wheel_angle = vrep.simxGetJointPosition(
-			clientID, right_motor_handle, vrep.simx_opmode_streaming)
+			self.clientID, self.right_motor_handle, vrep.simx_opmode_streaming)
 		_, new_left_wheel_angle = vrep.simxGetJointPosition(
-			clientID, left_motor_handle, vrep.simx_opmode_streaming)
+			self.clientID, self.left_motor_handle, vrep.simx_opmode_streaming)
 
 		if new_left_wheel_angle < 0:
 			new_left_wheel_angle = 2 * PI + new_left_wheel_angle
@@ -108,19 +103,6 @@ class odometry(threading.Thread):
 		pos_y = pos_y + delta_s * np.sin(angle)
 		angle = angle + delta_theta
 
-		last_exec_time = exec_time
-
 	def getPos(self):
 		global pos_x, pos_y
 		return pos_x, pos_y
-
-def start_thread(clientID_, robot_handle_, left_motor_handle_, right_motor_handle_):
-	global clientID, robot_handle, left_motor_handle, right_motor_handle
-
-	clientID = clientID_
-	robot_handle = robot_handle_
-	left_motor_handle = left_motor_handle_
-	right_motor_handle = right_motor_handle_
-
-	thread = odometry()
-	thread.start()

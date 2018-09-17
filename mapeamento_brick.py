@@ -123,8 +123,8 @@ if clientID != -1:
     a_list = []
     _thread.start_new_thread(input_thread, (a_list,))
 
-    odometry_thread = odometry.odometry()
-    odometry.start_thread(clientID, robot_handle, left_motor_handle, right_motor_handle)
+    odometry_thread = odometry.odometry(clientID, robot_handle, left_motor_handle, right_motor_handle)
+    odometry_thread.start()
 
     #number_of_turns = 0
     while not a_list and vrep.simxGetConnectionId(clientID)!=-1:
