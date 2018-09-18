@@ -56,7 +56,7 @@ class Robot:
             self.sonarHandle[x] = self.sim.getHandle('Pioneer_p3dx_ultrasonicSensor'+str(x+1))
             
         # VISION
-        self.visionHandle = self.sim.getHandle('Pioneer_p3dx_rightMotor')
+        self.visionHandle = self.sim.getHandle('camera')
             
         # WHEEL
         self.wheelHandle[0] = self.sim.getHandle('Pioneer_p3dx_leftWheel')
@@ -174,12 +174,20 @@ class Robot:
 
     def readLaser(self):
         pointCloud = self.sim.readLaserSensor("measuredDataAtThisTime")
-
         laser_array = np.reshape(pointCloud, (int(len(pointCloud)/3),3))
 
         return laser_array
 
-    
+    ### -----------
+    ### IMAGE
+    def getSensorViewImage(self):
+        resolution, image_array = self.sim.getVisionSensorImage(self.visionHandle)
+        image = np.array(image_array, dtype=np.uint8)#Create a numpy array with uint8 type
+        image.resize([resolution[1], resolution[0],3])
+
+        return image
+
+
     ### -----------
     ### ODOMETRY  
     
@@ -263,7 +271,10 @@ class Robot:
         return localToGlobal(self.getPosOrn(), position)
     
     def getPosOrn(self):
-        x, y = self.sim.getObjectPosition(self.robotHandle, -1)[:2]
+        #x, y = self.sim.getObjectPosition(self.robotHandle, -1)[:2]
+        position = self.sim.getObjectPosition(self.robotHandle, -1)[:2]
+        x = position[0]
+        y = position[1]
         orn = self.sim.getObjectOrientation(self.robotHandle, -1)[2]
         return x, y, orn
     
