@@ -55,7 +55,7 @@ class odometry(threading.Thread):
 
 		while True:
 			self.update()
-			time.sleep(0.0001)
+			time.sleep(0.1)
 
 	def update(self):
 		global last_exec_time, left_wheel_angle, right_wheel_angle, pos_x, pos_y, angle

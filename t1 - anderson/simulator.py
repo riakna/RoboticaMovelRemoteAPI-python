@@ -57,13 +57,8 @@ class Simulator:
             
         return pingTime
     
-    def getLastCmdTime(self, name):
-        returnCode, cmdTime = vrep.getLastCmdTime(self.clientId)
-        if (returnCode != vrep.simx_return_ok) :
-            sys.exit("Unable to get cmd time")
-            
-        return cmdTime
-    
+    def getLastCmdTime(self):
+        return vrep.simxGetLastCmdTime(self.clientId)    
     
     
     ### ACTUATORS
