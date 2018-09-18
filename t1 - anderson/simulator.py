@@ -58,7 +58,7 @@ class Simulator:
         return pingTime
     
     def getLastCmdTime(self, name):
-        returnCode, cmdTime = vrep.getLastCmdTime(self.clientId)
+        returnCode, cmdTime = vrep.simxGetLastCmdTime(self.clientId)
         if (returnCode != vrep.simx_return_ok) :
             sys.exit("Unable to get cmd time")
             
@@ -102,7 +102,7 @@ class Simulator:
     def initProximitySensor(self, sensorHandle):
         initStream(vrep.simxReadProximitySensor, self.clientId, sensorHandle) 
     def readProximitySensor(self, sensorHandle):
-        detectionState, detectedPoint, detectedObjectHandle, detectedSurfaceNormalVector = getBuffer(
+        detectionState, detectedPoint, _, _ = getBuffer(
                 vrep.simxReadProximitySensor, self.clientId, sensorHandle)
         return detectionState, detectedPoint[2]
     

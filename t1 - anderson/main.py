@@ -9,6 +9,7 @@ from robot import Robot
 from util import Map
 import time
 import numpy as np
+import cv2
 
 robot = Robot()
 mapPoints = Map()
@@ -54,6 +55,27 @@ while (time.time()-t) < 100:
     laser_point_cloud = laser_point_cloud[:,:2]
     for x in range(len(laser_point_cloud)):
         mapPoints.addPoint('obstaclesLaser', *robot.localToGlobalGT(laser_point_cloud[x]))
+
+    #get image from sensorView
+    image = robot.getSensorViewImage()
+
+    #extração de linhas da imagem
+    '''
+    edges = cv2.Canny(image, 50, 200)
+    cv2.imshow('image', cv2.flip(edges, 0))
+    cv2.waitKey(1)
+
+    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 10, 100, 10)
+
+    if not (lines is None):
+        for i in range(len(lines)):
+            for x1, y1, x2, y2 in lines[i]:
+                cv2.line(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+        cv2.imshow('image1', cv2.flip(image, 0))
+        cv2.waitKey(1)
+    '''
+    #--------------------------
         
     time.sleep(0.001)
     
