@@ -75,8 +75,6 @@ if clientID != -1:
     errCode, signalValue = vrep.simxGetStringSignal(clientID, "measuredDataAtThisTime",vrep.simx_opmode_streaming)
     measuredData=vrep.simxUnpackFloats(signalValue)
 
-    print(measuredData)
-
     def setVelocity(v_left, v_right):
         vrep.simxSetJointTargetVelocity(clientID, left_motor_handle, v_left, vrep.simx_opmode_streaming)
         vrep.simxSetJointTargetVelocity(clientID, right_motor_handle, v_right, vrep.simx_opmode_streaming)

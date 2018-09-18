@@ -61,8 +61,7 @@ class Robot:
         # WHEEL
         self.wheelHandle[0] = self.sim.getHandle('Pioneer_p3dx_leftWheel')
         self.wheelHandle[1] = self.sim.getHandle('Pioneer_p3dx_rightWheel')
-        
-        
+
         ### -----------
         ### INIT STREAMS
         self.sim.initObjectPositionStream(self.robotHandle, -1)
@@ -74,6 +73,7 @@ class Robot:
         self.sim.initObjectVelocity(self.robotHandle)
         self.sim.initJointPositionStream(self.motorHandle[0])
         self.sim.initJointPositionStream(self.motorHandle[1])
+        self.sim.initLaserSensor("measuredDataAtThisTime")
         
 
         ### -----------
@@ -139,13 +139,13 @@ class Robot:
         self.move(0, 0)
         
     def drive(self, vLinear, vAngular):
-        self.move(self.vLToDrive(vLinear,vAngular), self.vRToDrive(vLinear,vAngular)); 
+        self.move(self.vLToDrive(vLinear,vAngular), self.vRToDrive(vLinear,vAngular)) 
         
     def vRToDrive(self, vLinear, vAngular):
-        return (((2*vLinear)+(self.L*vAngular))/2*self.R);
+        return (((2*vLinear)+(self.L*vAngular))/2*self.R)
     
     def vLToDrive(self, vLinear, vAngular):
-        return (((2*vLinear)-(self.L*vAngular))/2*self.R);
+        return (((2*vLinear)-(self.L*vAngular))/2*self.R)
     
     ### -----------
     ### SONAR  
@@ -169,7 +169,16 @@ class Robot:
         return distances, pointCloud
     
     
-    
+    ### -----------
+    ### LASER
+
+    def readLaser(self):
+        pointCloud = self.sim.readLaserSensor("measuredDataAtThisTime")
+
+        laser_array = np.reshape(pointCloud, (int(len(pointCloud)/3),3))
+
+        return laser_array
+
     
     ### -----------
     ### ODOMETRY  

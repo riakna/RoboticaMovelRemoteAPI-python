@@ -21,6 +21,8 @@ turning_right = False
 while (time.time()-t) < 100:
         
     distances, point_cloud = robot.readSonars()
+
+    laser_point_cloud = robot.readLaser()
         
     cont_left = 0
     cont_right = 0
@@ -49,6 +51,9 @@ while (time.time()-t) < 100:
         if (point_cloud[x] != (np.inf, np.inf)):
             mapPoints.addPoint('obstaclesSonar', *robot.localToGlobalGT(point_cloud[x]))
 
+    laser_point_cloud = laser_point_cloud[:,:2]
+    for x in range(len(laser_point_cloud)):
+        mapPoints.addPoint('obstaclesLaser', *robot.localToGlobalGT(laser_point_cloud[x]))
         
     time.sleep(0.001)
     

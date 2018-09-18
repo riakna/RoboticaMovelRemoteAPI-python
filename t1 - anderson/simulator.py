@@ -11,7 +11,7 @@ import sys
 class Simulator:
 
     def __init__(self, ip, portNumber):
-        self.clientId = -1;
+        self.clientId = -1
         self.ip = ip
         self.portNumber = portNumber
         
@@ -48,21 +48,21 @@ class Simulator:
         if (returnCode != vrep.simx_return_ok) :
             sys.exit("Unable to receive handle")
             
-        return handle;
+        return handle
     
     def getPingTime(self, name):
         returnCode, pingTime = vrep.simxGetPingTime(self.clientId)
         if (returnCode != vrep.simx_return_ok) :
             sys.exit("Unable to get ping time")
             
-        return pingTime;
+        return pingTime
     
     def getLastCmdTime(self, name):
         returnCode, cmdTime = vrep.getLastCmdTime(self.clientId)
         if (returnCode != vrep.simx_return_ok) :
             sys.exit("Unable to get cmd time")
             
-        return cmdTime;
+        return cmdTime
     
     
     
@@ -116,7 +116,13 @@ class Simulator:
     def getFloatSignal(self, signalName):
         return getBuffer(vrep.simxGetFloatSignal, self.clientId, signalName)
     
-    
+    def initLaserSensor(self, signalName):
+        initStream(vrep.simxGetStringSignal, self.clientId, signalName)
+    def readLaserSensor(self, signalName):
+        signalValue = getBuffer(vrep.simxGetStringSignal, self.clientId, signalName)
+        measuredData=vrep.simxUnpackFloats(signalValue)
+        return measuredData
+
     
 ## Decorator functions
         
