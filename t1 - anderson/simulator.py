@@ -59,7 +59,6 @@ class Simulator:
     
     def getLastCmdTime(self):
         return vrep.simxGetLastCmdTime(self.clientId)    
-
     
     ### ACTUATORS
     def setJointTargetVelocity(self, handle, velocity):

@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
 import pickle
+from matplotlib.font_manager import FontProperties
 
 
 class Map:
@@ -56,8 +57,10 @@ class Map:
         
     def saveFig(self, name, keyList, color, label, s):
         
-        fig, ax = plt.subplots(dpi=200)
+        fig, ax = plt.subplots(dpi=150)
+
         plt.gca().set_aspect('equal', adjustable='box')
+        plt.axis('off')
         
         patches = []
     
@@ -67,12 +70,14 @@ class Map:
                 ax.scatter(pointsNp[:,0], pointsNp[:,1], color=color[i], s=s[i])
                 patches.append(mpatches.Patch(color=color[i], label=label[i]))
                 
-        ax.legend(handles=patches,loc='upper right')
-        
-        plt.savefig(name+'.png')
-            
-        
+        ax.legend(handles=patches,loc='upper right', fontsize='x-small')
 
-     
+        fig.tight_layout()
+
+        plt.savefig(name+'.png',  bbox_inches='tight')
+  
+    
+    
+    
     
     
