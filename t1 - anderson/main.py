@@ -96,8 +96,9 @@ while (time.time()-t) < 120:
 mapPoints.plotAll()
 mapPoints.saveData('test')
 robot.stop()
-
+'''
 mapPoints.saveFig("figura_odometry_raw",  
                   ['obstaclesLaser', 'robotPathGT', 'robotPathRaw'],
                   ['black', 'red', 'blue'],
                   )
+'''
