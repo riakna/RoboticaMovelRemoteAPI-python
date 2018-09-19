@@ -19,7 +19,7 @@ t = time.time()
 turning_left = False
 turning_right = False
 
-while (time.time()-t) < 120:
+while (time.time()-t) < 200:
         
     distances, point_cloud = robot.readSonars()
 
@@ -38,16 +38,18 @@ while (time.time()-t) < 120:
     
     if (cont_left > 0) or (cont_right > 0):
         if (cont_left >= cont_right) or turning_left:
-            robot.drive(0, -15)
+            robot.drive(0, 30)
             turning_left = True
         elif (cont_left < cont_right) or turning_right:
-            robot.drive(0, 15)
+            robot.drive(0, 30)
             turning_right = True
     else:
-        robot.drive(20, 0)
+        robot.drive(50, 0)
         turning_left = False
         turning_right = False
     
+    
+    print(robot.getLinearVelocity())
 
     for x in range(0, len(point_cloud)):
         if (point_cloud[x] != (np.inf, np.inf)):
@@ -58,7 +60,7 @@ while (time.time()-t) < 120:
         mapPoints.addPoint('obstaclesLaser', *robot.localToGlobalGT(laser_point_cloud[x]))
 
     #get image from sensorView
-    image = robot.getSensorViewImage()
+    #image = robot.getSensorViewImage()
 
     #extração de linhas da imagem
     '''
@@ -96,8 +98,3 @@ while (time.time()-t) < 120:
 mapPoints.plotAll()
 mapPoints.saveData('test')
 robot.stop()
-
-mapPoints.saveFig("figura_odometry_raw",  
-                  ['obstaclesLaser', 'robotPathGT', 'robotPathRaw'],
-                  ['black', 'red', 'blue'],
-                  )

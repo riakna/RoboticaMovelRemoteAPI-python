@@ -56,7 +56,7 @@ class Robot:
             self.sonarHandle[x] = self.sim.getHandle('Pioneer_p3dx_ultrasonicSensor'+str(x+1))
             
         # VISION
-        self.visionHandle = self.sim.getHandle('camera')
+        #self.visionHandle = self.sim.getHandle('camera')
             
         # WHEEL
         self.wheelHandle[0] = self.sim.getHandle('Pioneer_p3dx_leftWheel')
@@ -69,7 +69,7 @@ class Robot:
         for x in range(0, len(self.sonarHandle)):
             self.sim.initProximitySensor(self.sonarHandle[x])
         self.sim.initFloatSignal("gyroZ")
-        self.sim.initVisionSensorImage(self.visionHandle)
+        #self.sim.initVisionSensorImage(self.visionHandle)
         self.sim.initObjectVelocity(self.robotHandle)
         self.sim.initJointPositionStream(self.motorHandle[0])
         self.sim.initJointPositionStream(self.motorHandle[1])
@@ -291,7 +291,7 @@ class Robot:
         return self.odometryPosOrn['encoder_compass']
     
     def getLinearVelocity(self):
-        return np.linalg.norm(self.sim.getObjectVelocity(self.robotHandle)[0][:2])
+        return np.linalg.norm(self.sim.getObjectVelocity(self.robotHandle)[1][2])
 
 
 def localToGlobal(posOrnSource, pos):
