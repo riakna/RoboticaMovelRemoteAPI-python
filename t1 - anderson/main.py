@@ -49,8 +49,6 @@ while (time.time()-t) < 200:
         turning_right = False
     
     
-    print(robot.getLinearVelocity())
-
     for x in range(0, len(point_cloud)):
         if (point_cloud[x] != (np.inf, np.inf)):
             mapPoints.addPoint('obstaclesSonar', *robot.localToGlobalGT(point_cloud[x]))
