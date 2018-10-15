@@ -8,6 +8,7 @@ Created on Wed Sep 12 10:34:58 2018
 import numpy as np
 from simulator import Simulator
 import time
+from controllers import OAFController
 
 class Robot:
 
@@ -111,6 +112,11 @@ class Robot:
         self.motorW = [None] * 2
         self.motorW[0] = 0
         self.motorW[1] = 0
+        
+        
+        # Behaivors
+        
+        self.oafCtrl = OAFController()
         
     
     ### -----------
@@ -235,6 +241,37 @@ class Robot:
         
         self.odometryPosOrn['compass'] = self._computeOdometry(
                 self.odometryPosOrn['compass'], thetaL, thetaR, deltaTheta)
+        
+        
+    ### -----------
+    ### BEHAVIORS  
+    
+    def avoidObstacles(self):
+        
+        distancesL = []
+        
+        for i in range(1, 4):
+            state, distance = self.sim.readProximitySensor(self.sonarHandle[i])
+            if (state == True):
+                distancesL.append(distance*np.cos(self.SONAR_ANGLES[i]))
+            else:
+                distancesL.append(np.inf)
+                
+        distancesR = []
+        
+        for i in range(4, 7):
+            state, distance = self.sim.readProximitySensor(self.sonarHandle[i])
+            if (state == True):
+                distancesR.append(distance*np.cos(self.SONAR_ANGLES[i]))
+            else:
+                distancesR.append(np.inf)
+                
+        vLinear, vAngular = self.oafCtrl.compute(np.min(distancesL), np.min(distancesR))
+        
+        print(vLinear, vAngular)
+        
+        self.drive(10*vLinear, 100*vAngular)
+        
         
     ### -----------
     ### GETTERS  

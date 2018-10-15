@@ -27,7 +27,7 @@ class OAFController:
         # Fuzzy Functions
         angularVelocity['left_high']    = fuzz.trapmf(angularVelocity.universe, [-2, -2, -1, 0])
         angularVelocity['zero']        = fuzz.trimf(angularVelocity.universe, [0, 0, 0])
-        angularVelocity['right_high']   = fuzz.trapmf(angularVelocity.universe, [0, 1, 2, 2])
+        angularVelocity['right_high']   = fuzz.trapmf(angularVelocity.universe, [0, 1.5, 2, 2])
 
         linearVelocity['zero']   = fuzz.trimf(linearVelocity.universe, [0, 0, 0])
         linearVelocity['low']    = fuzz.trimf(linearVelocity.universe, [0, 1, 2])
@@ -79,6 +79,6 @@ class OAFController:
 test = OAFController()
 #test.viewGrahs()
 
-print(test.compute(4, 2))
+print(test.compute(np.inf, 2))
 test.viewGrahs()
 
