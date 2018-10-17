@@ -9,6 +9,7 @@ import numpy as np
 from simulator import Simulator
 import time
 from controllers import OAFController
+from controller_util import PIDController
 
 class Robot:
 
@@ -271,6 +272,30 @@ class Robot:
         print(vLinear, vAngular)
         
         self.drive(10*vLinear, 100*vAngular)
+        
+    def followWall(self, left):
+        
+        if (left):
+            sonarId = 0
+        else:
+            sonarId = 8
+            
+        state, distance = self.sim.readProximitySensor(self.sonarHandle[sonarId])
+        if (state == False):
+            distance = np.inf
+            
+    
+        pid_test = PIDController(0.3, 2, 0.05, 20, windowSize=10)
+        
+        if (left):
+            value = -pid_test.compute(distance)
+        else:
+            value = pid_test.compute(distance)
+        
+        print (distance, value)
+        
+        self.drive(10, 5*value)
+    
         
         
     ### -----------

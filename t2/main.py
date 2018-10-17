@@ -34,7 +34,7 @@ while (time.time()-t) < 2000:
 
     """
     
-    robot.avoidObstacles()
+    robot.followWall(True)
     time.sleep(0.1)
     
     robot.computeOdometryEncoder()

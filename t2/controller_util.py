@@ -75,6 +75,7 @@ class PIDController(Controller):
         return uProportional + uIntegral + uDerivative
     
 
+"""
 variable = 10
 pid_test = PIDController(20, 0.1, 0, 0, windowSize=3)
 
@@ -83,7 +84,7 @@ for i in range(0, 20):
     time.sleep(0.01)
     print(variable)        
 
-
+"""
         
     
 
