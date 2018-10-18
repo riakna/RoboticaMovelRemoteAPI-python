@@ -2,19 +2,6 @@ import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
 import matplotlib.pyplot as plt 
-'''
-sensor_range = np.arange(0, 100, 1)
-
-speed_range = np.arange(0, 10, .1)
-
-lateral_sensor_vclose = fuzz.trimf(sensor_range, [0, 0, 10])
-lateral_sensor_close = fuzz.trimf(sensor_range, [9, 21, 30])
-lateral_sensor_medium = fuzz.trimf(sensor_range, [26, 38, 50])
-lateral_sensor_far = fuzz.trapmf(sensor_range, [46, 60, 100, 100])
-
-
-lateral_sensor_vclose.view()
-'''
 
 lateral_sensor = ctrl.Antecedent(np.arange(0, 100, 1), 'lateral_sensor')
 diagonal_sensor = ctrl.Antecedent(np.arange(0, 100, 1), 'diagonal_sensor')
@@ -54,35 +41,25 @@ right_speed.view()
 
 rules = []
 #left_speed rules
-very_close
-close
-medium
-far
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
+
+rules.append(ctrl.Rule(front_sensor['very_close'] | front_sensor['close'], (left_speed['fast'], right_speed['slow']))
+rules.append(ctrl.Rule(lateral_sensor['medium'], (left_speed['medium'], right_speed['medium']))
+rules.append(ctrl.Rule(lateral_sensor['close'], (left_speed['fast'], right_speed['medium']))
+rules.append(ctrl.Rule(diagonal_sensor['far'] & not lateral_sensor['far'], (left_speed['slow'], right_speed['medium']))
+rules.append(ctrl.Rule(diagonal_sensor['far'], (left_speed['slow'], right_speed['fast']))
+rules.append(ctrl.Rule(lateral_sensor['far'], (left_speed['medium'], right_speed['fast']))
+rules.append(ctrl.Rule(front_sensor['far'] & lateral_sensor['medium'], (left_speed['medium'], right_speed['medium']))
 rules.append(ctrl.Rule(lateral_sensor['close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], right_speed['slow']))
 rules.append(ctrl.Rule(lateral_sensor['medium'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['far'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
-rules.append(ctrl.Rule(lateral_sensor['very_close'] & diagonal_sensor['very_close'] & front_sensor['very_close'], left_speed['slow']))
 
+fuzzySystem = ctrl.ControlSystem(rules)
+sim = ctrl.ControlSystemSimulation(fuzzySystem)
+
+sim.input['lateral_sensor'] = <<valor medido>>
+sim.input['diagonal_sensor'] = <<valor medido>>
+sim.input['front_sensor'] = <<valor medido>>
+
+print(sim.output['left_speed'], sim.output['right_speed'])
 
 plt.show()
 #class WFFController:
