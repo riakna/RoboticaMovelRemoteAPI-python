@@ -95,7 +95,7 @@ def plot(graphDataList, legendList=[], title="", xLabel="", yLabel = ""):
         
     plt.setp(lines, linewidth=2.0)
     plt.ylabel(yLabel)
-    plt.ylabel(xLabel)
+    plt.xlabel(xLabel)
     
     plt.legend(tuple(legendList), loc='upper right')
     plt.show()

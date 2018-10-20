@@ -27,7 +27,7 @@ while (time.time()-t) < 40:
         mapPoints.addPoint('obstaclesLaser', *robot.localToGlobalGT(laser_point_cloud[x]))
         
     time.sleep(0.01)
-    robot.avoidObstacles()
+    robot.avoidObstaclesFuzzy()
     
     robot.computeOdometryEncoder()
      
@@ -54,7 +54,7 @@ while (time.time()-t) < 40:
     for x in range(len(laser_point_cloud)):
         mapPoints.addPoint('obstaclesLaser', *robot.localToGlobalGT(laser_point_cloud[x]))
     
-    output = robot.followWall(True)
+    output = robot.followWallPID(True)
     Y.append(output[0])
     X.append(time.time()-t)
     
@@ -72,5 +72,26 @@ robot.stop()
 #GraphData(X, Y).saveData('dados/follow_wall...')
 
 
+#%% Subsumptions test
 
+robot = Robot()
+mapPoints = Map()
+t = time.time()
+
+while (time.time()-t) < 40:
+        
+    laser_point_cloud = robot.readLaser()
+    laser_point_cloud = laser_point_cloud[:,:2]
+    for x in range(len(laser_point_cloud)):
+        mapPoints.addPoint('obstaclesLaser', *robot.localToGlobalGT(laser_point_cloud[x]))
+        
+    time.sleep(0.01)
+    robot.stepSubsumptionStrategy()
+    
+    robot.computeOdometryEncoder()
+     
+    mapPoints.addPoint('robotPathGT', *robot.getPosOrn()[:2])
+    mapPoints.addPoint('robotPathEncoder', *robot.getPosOrnOdometyEncoder()[:2])
+
+robot.stop()
 

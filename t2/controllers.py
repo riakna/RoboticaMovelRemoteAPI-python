@@ -4,13 +4,79 @@ Created on Mon Oct  8 10:27:03 2018
 
 @author: Anderson
 
-
-OAF => ObstacleAvoidanceFuzzy
 """
 
 import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
+
+import time
+
+class Controller:
+    
+    def __init__(self, reference):
+        self.reference = reference
+        
+    def setReference(self, reference):
+        self.reference = reference
+
+
+class OnOffController(Controller):
+    
+    def __init__(self, reference, uMin, uMax):
+        super().__init__(reference)
+        self.uMin = uMin
+        self.uMax = uMax
+        
+    def compute(self, measured):
+        error = self.reference - measured
+        if error > 0:
+            return self.uMax
+        
+        return self.uMin
+    
+    
+class PIDController(Controller):
+    
+    def __init__(self, reference, kp, ki=0, kd=0, windowSize=None):
+        super().__init__(reference)
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+        self.integral = 0
+        self.lastError = None
+        self.lastTime = None
+        if windowSize is not None: 
+            self.integralHistory = [0] * windowSize
+
+    def compute(self, measured):
+
+        error = self.reference - measured
+        currentTime = time.time()
+        
+        # Propotional
+        uProportional  = self.kp * error
+        uIntegral = 0
+        uDerivative = 0
+        
+        if self.lastTime is not None: 
+            
+            # Integral
+            currentIntegral = error * (currentTime - self.lastTime)
+            oldestIntegral = self.integralHistory[0]
+            self.integralHistory = self.integralHistory[1:] + [None] # desloca elementos para esquerda
+            self.integralHistory[-1] = currentIntegral
+            self.integral += currentIntegral - oldestIntegral
+            uIntegral = self.ki * self.integral
+            
+            # Derivative 
+            currentDerivative = (error - self.lastError) / (currentTime - self.lastTime)
+            uDerivative = self.kd * currentDerivative
+    
+        self.lastTime = currentTime
+        self.lastError = error
+        
+        return uProportional + uIntegral + uDerivative
 
 class OAFController:
     
@@ -75,10 +141,4 @@ class OAFController:
         self.fuzzySystemSim.compute()
                 
         return self.fuzzySystemSim.output['linearVelocity'], self.fuzzySystemSim.output['angularVelocity']
-        
-
-        
-test = OAFController()
-#test.viewGrahs()
-test.viewGrahs()
 
