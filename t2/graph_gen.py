@@ -4,180 +4,86 @@ Created on Tue Sep 18 15:32:45 2018
 
 @author: Anderson
 """
-
 from util import Map
+from util import GraphData
+from util import plot
 
+#%%############################
+# ========= Mapas ============# 
+###############################
 
-mapPoints = Map()
+#%%
 
-mapPoints.loadData('pontos20l_15a')
+mapPoints = Map.loadData('dados/obstacle_avoid_fuzzy_mapa')
 
-
-mapPoints.saveFig("fig_odometria_simples_velocidade_baixa",  
-                  ['obstaclesLaser', 'robotPathGT', 'robotPathRaw'],
+mapPoints.saveFig("imagens/map_oa_fuzzy1",  
+                  ['obstaclesLaser', 'robotPathGT', 'robotPathEncoder'],
                   ['black', 'red', 'blue'],
-                  ['Pontos detectados pelo sensor laser', 'Caminho do robo GT', 'Caminho estimado pela odometria simples'],
+                  ['Pontos detectados pelo sensor laser', 'Caminho do robo GT', 'Caminho estimado pela odometria encoder'],
                   [2, 1, 1])
 
-mapPoints.saveFig("fig_odometria_todas_velocidade_baixa",  
-                  ['obstaclesLaser', 'robotPathGT', 'robotPathRaw', 'robotPathEncoder', 'robotPathCompass'],
-                  ['black', 'red', 'blue', 'green', 'orange'],
-                  ['Pontos detectados pelo sensor laser', 'Caminho do robo GT', 'Caminho estimado pela odometria simples', 'Caminho estimado pela odometria encoder',  'Caminho estimado pela odometria giroscópio'],
-                  [2, 1, 1, 1, 1])
 
-mapPoints.loadData('pontos50l_30a')
+#%%
 
+mapPoints = Map.loadData('dados/follow_wall_pid_mapa')
 
-mapPoints.saveFig("fig_odometria_simples_velocidade_media",  
-                  ['obstaclesLaser', 'robotPathGT', 'robotPathRaw'],
+mapPoints.saveFig("imagens/map_wf_pid1",  
+                  ['obstaclesLaser', 'robotPathGT', 'robotPathEncoder'],
                   ['black', 'red', 'blue'],
-                  ['Pontos detectados pelo sensor laser', 'Caminho do robo GT', 'Caminho estimado pela odometria simples'],
-                  [2, 1, 1, 1, 1])
+                  ['Pontos detectados pelo sensor laser', 'Caminho do robo GT', 'Caminho estimado pela odometria encoder'],
+                  [2, 1, 1])
 
 
-mapPoints.saveFig("fig_odometria_encoder_compass_velocidade_media",  
-                  ['obstaclesLaser', 'robotPathGT', 'robotPathEncoder', 'robotPathCompass'],
-                  ['black', 'red', 'blue', 'green'],
-                  ['Pontos detectados pelo sensor laser', 'Caminho do robo GT', 'Caminho estimado pela odometria encoder',  'Caminho estimado pela odometria giroscópio'],
-                  [2, 1, 1, 1])
+#%%############################
+# ========= Gráficos =========# 
+###############################
 
-mapPoints.loadData('pontos80l_40a')
+#%%
+d1 = GraphData.loadData("dados/follow_wall_p_05")
+d2 = GraphData.loadData("dados/follow_wall_p_1")
 
-mapPoints.saveFig("fig_odometria_encoder_compass_velocidade_alta",  
-                  ['obstaclesLaser', 'robotPathGT', 'robotPathEncoder', 'robotPathCompass'],
-                  ['black', 'red', 'blue', 'green'],
-                  ['Pontos detectados pelo sensor laser', 'Caminho do robo GT', 'Caminho estimado pela odometria encoder',  'Caminho estimado pela odometria giroscópio'],
-                  [2, 1, 1, 1])
+plot([d1, d2], ['Kp = 0.5', 'Kp = 1'], 
+     'Distância lida pelo sonar em função do tempo', 
+     'Tempo (s)', 'Distância (m)')
+
 
 
 #%%
-mapPoints = Map()
+d2 = GraphData.loadData("dados/follow_wall_p_1")
+d3 = GraphData.loadData("dados/follow_wall_p_2")
 
-mapPoints.loadData('mapeamento')
+plot([d2, d3], ['Kp = 1', 'Kp = 2'], 
+     'Distância lida pelo sonar em função do tempo', 
+     'Tempo (s)', 'Distância (m)')
 
-mapPoints.saveFig("fig_map_laser",  
-                  ['obstaclesLaser'],
-                  ['blue'],
-                  ['Pontos detectados pelo sensor laser'],
-                  [0.001])
-
-
-mapPoints.saveFig("fig_map_sonar",  
-                  ['obstaclesSonar'],
-                  ['red'],
-                  ['Pontos detectados pelo sonar'],
-                  [0.01])
-
-
-mapPoints.saveFig("fig_map_laser_sonar",  
-                  ['obstaclesLaser','obstaclesSonar'],
-                  ['blue', 'red'],
-                  ['Pontos detectados pelo sensor laser', 'Pontos detectados pelo sonar'],
-                  [0.001, 0.01])
-
-#%%
-from util import Map
-
-mapPoints = Map()
-mapPoints.loadData('mapeamento')
-
-points = mapPoints.points['obstaclesLaser']
 
 
 #%%
 
-from scipy.stats import linregress
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import collections  as mc
+d1 = GraphData.loadData("dados/follow_wall_pi_0005")
+d2 = GraphData.loadData("dados/follow_wall_pi_005")
+d3 = GraphData.loadData("dados/follow_wall_pi_001")
 
-pointsNp = np.array(points[:50])
-plt.scatter(pointsNp[:,0], pointsNp[:,1])
-plt.show()
-
-#%%
-
-
-
-
-segments = []
-
-def split(points):
-    
-    if (len(points))<2:
-        return
-
-    pointsNp = np.array(points)
-    slope, intercept, _, _, _ = linregress(pointsNp[:,0], pointsNp[:,1])
-    
-    distance = [np.absolute(-slope*point[0]+point[1]-intercept)/(np.sqrt(1+slope**2)) 
-        for point in points]
-    
-    def f(x):
-        return slope*x + intercept
-    
-    max_idx = np.argmax(distance)
-    
-    print(np.max(distance))
-    
-    if (distance[max_idx]>0.1):
-        farthest_point = points[max_idx]
-        
-        def separator(x):
-            return (-x/slope) + (farthest_point[1] + (farthest_point[0]/slope))
-        
-        set1 = [point for point in points if separator(point[0])>=point[1]]
-        set2 = [point for point in points if separator(point[0])<=point[1]]
-        
-        if (len(set1)<2):
-            set2 = [point for point in points if separator(point[0])<point[1]]
-            split(set2) 
-        elif (len(set2)<2):
-            set1 = [point for point in points if separator(point[0])>point[1]]
-            split(set1) 
-        else:
-            split(set1) 
-            split(set2)   
-        
-        
-    else:
-        x_begin = np.min(pointsNp[:,0])
-        x_end = np.max(pointsNp[:,0])
-        segments.append([(x_begin, f(x_begin)),(x_end, f(x_end))])
-
-
-split(points[:100])
-
-print(segments)
-
-lc = mc.LineCollection(segments, linewidths=2)
-fig, ax = plt.subplots()
-ax.add_collection(lc)
-ax.autoscale()
-ax.margins(0.1)
-plt.scatter(pointsNp[:,0], pointsNp[:,1])
-
-
-plt.show()
+plot([d1, d2, d3], ['Kp = 1 | Ki = 0.005', 'Kp = 1 | Ki = 0.05', 'Kp = 1 | Ki = 0.01'], 
+     'Distância lida pelo sonar em função do tempo', 
+     'Tempo (s)', 'Distância (m)')
 
 #%%
 
-pointsNp = np.array(points)
-plt.scatter(pointsNp[:,0], pointsNp[:,1])
+d1 = GraphData.loadData("dados/follow_wall_p_1")
+d2 = GraphData.loadData("dados/follow_wall_pi_001")
+
+plot([d1, d2], ['Kp = 1 | Ki = 0', 'Kp = 1 | Ki = 0.01'], 
+     'Distância lida pelo sonar em função do tempo', 
+     'Tempo (s)', 'Distância (m)')
 
 
 #%%
-x = np.linspace(1, 2, 1000)
-plt.scatter(x, f(x))
-plt.show()
 
+d1 = GraphData.loadData("dados/follow_wall_pd_05")
+d2 = GraphData.loadData("dados/follow_wall_pd_2")
+d3 = GraphData.loadData("dados/follow_wall_pd_5")
 
-# %%
-
-from scipy.spatial import KDTree
-
-tree = KDTree(points[:100])
-neighbor_dists, neighbor_indices = tree.query(points[:100], k=4)
-
-
-print(neighbor_dists)
+plot([d1, d2, d3], ['Kp = 1 | Kd = 0.5', 'Kp = 1 | Kd = 2', 'Kp = 1 | Kd = 5'], 
+     'Distância lida pelo sonar em função do tempo', 
+     'Tempo (s)', 'Distância (m)')

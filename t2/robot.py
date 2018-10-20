@@ -114,11 +114,7 @@ class Robot:
         self.motorW[0] = 0
         self.motorW[1] = 0
         
-        
-        # Behaivors
-        
-        self.oafCtrl = OAFController()
-        
+
     
     ### -----------
     ### DRIVE  
@@ -247,6 +243,10 @@ class Robot:
     ### -----------
     ### BEHAVIORS  
     
+    wallFollowPID = PIDController(0.4, 1, 0, 2, windowSize=50)
+        
+    obstacleAvoidFuzzy = OAFController()
+
     def avoidObstacles(self):
         
         distancesL = []
@@ -254,27 +254,29 @@ class Robot:
         for i in range(1, 4):
             state, distance = self.sim.readProximitySensor(self.sonarHandle[i])
             if (state == True):
-                distancesL.append(distance*np.cos(self.SONAR_ANGLES[i]))
+                distancesL.append(np.abs(distance*np.cos(self.SONAR_ANGLES[i])))
             else:
-                distancesL.append(np.inf)
+                distancesL.append(1)
                 
         distancesR = []
         
         for i in range(4, 7):
             state, distance = self.sim.readProximitySensor(self.sonarHandle[i])
             if (state == True):
-                distancesR.append(distance*np.cos(self.SONAR_ANGLES[i]))
+                distancesR.append(np.abs(distance*np.cos(self.SONAR_ANGLES[i])))
             else:
-                distancesR.append(np.inf)
+                distancesR.append(1)
                 
-        vLinear, vAngular = self.oafCtrl.compute(np.min(distancesL), np.min(distancesR))
+                
+        print(10*np.min(distancesL), 10*np.min(distancesR))
+                
+        vLinear, vAngular = self.obstacleAvoidFuzzy.compute(10*np.min(distancesL), 10*np.min(distancesR))
         
         print(vLinear, vAngular)
         
-        self.drive(10*vLinear, 100*vAngular)
+        self.drive(10*vLinear, 20*vAngular)
         
 
-    pid_ctrl = PIDController(0.4, 1, 0, 2, windowSize=50)
 
     def followWall(self, left):
         
@@ -287,8 +289,7 @@ class Robot:
         if (state == False):
             distance = 0.8
             
-    
-        value = self.pid_ctrl.compute(distance)
+        value = self.wallFollowPID.compute(distance)
         
         if (left):
             self.move(1+value, 1-value)
