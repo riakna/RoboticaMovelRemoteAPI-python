@@ -273,6 +273,9 @@ class Robot:
         
         self.drive(10*vLinear, 100*vAngular)
         
+
+    pid_ctrl = PIDController(0.4, 1, 0, 2, windowSize=50)
+
     def followWall(self, left):
         
         if (left):
@@ -282,19 +285,19 @@ class Robot:
             
         state, distance = self.sim.readProximitySensor(self.sonarHandle[sonarId])
         if (state == False):
-            distance = np.inf
+            distance = 0.8
             
     
-        pid_test = PIDController(0.3, 2, 0.05, 20, windowSize=10)
+        value = self.pid_ctrl.compute(distance)
         
         if (left):
-            value = -pid_test.compute(distance)
+            self.move(1+value, 1-value)
         else:
-            value = pid_test.compute(distance)
+            self.move(1-value, 1+value)
         
-        print (distance, value)
+        print(distance, value)
         
-        self.drive(10, 5*value)
+        return distance, value
     
         
         

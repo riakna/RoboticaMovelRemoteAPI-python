@@ -74,11 +74,12 @@ class OAFController:
                 
         return self.fuzzySystemSim.output['linearVelocity'], self.fuzzySystemSim.output['angularVelocity']
         
-    
+   
+"""
         
 test = OAFController()
 #test.viewGrahs()
 
 print(test.compute(np.inf, 2))
 test.viewGrahs()
-
+"""

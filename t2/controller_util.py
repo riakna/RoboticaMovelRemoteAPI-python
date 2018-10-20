@@ -55,13 +55,12 @@ class PIDController(Controller):
         uDerivative = 0
         
         if self.lastTime is not None: 
-        
+            
             # Integral
             currentIntegral = error * (currentTime - self.lastTime)
             oldestIntegral = self.integralHistory[0]
             self.integralHistory = self.integralHistory[1:] + [None] # desloca elementos para esquerda
             self.integralHistory[-1] = currentIntegral
-            
             self.integral += currentIntegral - oldestIntegral
             uIntegral = self.ki * self.integral
             
