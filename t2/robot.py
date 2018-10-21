@@ -37,7 +37,7 @@ class Robot:
         self.sim.connect()        
         ### -----------
         ### GET HANDLES
-
+        
         # ROBOT
         self.robotHandle = self.sim.getHandle("Pioneer_p3dx")
         
@@ -117,7 +117,7 @@ class Robot:
         
         # Behaivors
         
-        self.oafCtrl = OAFController()
+        #self.oafCtrl = OAFController()
         
     
     ### -----------
