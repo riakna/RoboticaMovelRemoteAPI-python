@@ -11,37 +11,40 @@ import numpy as np
 import pickle
 from matplotlib.font_manager import FontProperties
 
-
-class Map:
-
-    points = {
-        'obstaclesSonar' : [],
-        'obstaclesLaser' : [],
-        'robotPathGT' : [],
-        'robotPathRaw': [],
-        'robotPathEncoder': [],
-        'robotPathCompass': [],
-        'robotPathEncoderCompass': []
-    }
-    
-    color = {
-        'obstaclesSonar' : 'blue',
-        'obstaclesLaser' : 'hotpink',
-        'robotPathGT' : 'red',
-        'robotPathRaw': 'green',
-        'robotPathEncoder': 'limegreen',
-        'robotPathCompass': 'dodgerblue',
-        'robotPathEncoderCompass': 'orange'
-    }
-    
+class Savable:
     
     def saveData(self, name):
         with open(name+'.pkl', 'wb') as f: 
-            pickle.dump(self.points, f)
+            pickle.dump(self, f)
             
-    def loadData(self, name):
+    @classmethod
+    def loadData(clas, name):
         with open(name+'.pkl', 'rb') as f:
-            self.points = pickle.load(f)
+            return pickle.load(f)
+
+class Map(Savable):
+    
+    def __init__(self):
+        
+        self.points = {
+            'obstaclesSonar' : [],
+            'obstaclesLaser' : [],
+            'robotPathGT' : [],
+            'robotPathRaw': [],
+            'robotPathEncoder': [],
+            'robotPathCompass': [],
+            'robotPathEncoderCompass': []
+        }
+        
+        self.color = {
+            'obstaclesSonar' : 'blue',
+            'obstaclesLaser' : 'hotpink',
+            'robotPathGT' : 'red',
+            'robotPathRaw': 'green',
+            'robotPathEncoder': 'limegreen',
+            'robotPathCompass': 'dodgerblue',
+            'robotPathEncoderCompass': 'orange'
+        }
         
     def addPoint(self, key, x, y):
         self.points[key].append((x, y))
@@ -75,7 +78,27 @@ class Map:
         fig.tight_layout()
 
         plt.savefig(name+'.png',  bbox_inches='tight')
-  
+
+
+class GraphData(Savable):
+    
+    def __init__(self, X, Y):
+        self.X = X
+        self.Y = Y
+        
+def plot(graphDataList, legendList=[], title="", xLabel="", yLabel = ""):
+
+    plt.title(title)
+
+    for data in graphDataList:
+        lines = plt.plot(data.X, data.Y)
+        
+    plt.setp(lines, linewidth=2.0)
+    plt.ylabel(yLabel)
+    plt.xlabel(xLabel)
+    
+    plt.legend(tuple(legendList), loc='upper right')
+    plt.show()
     
     
     

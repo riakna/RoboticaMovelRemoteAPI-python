@@ -46,7 +46,7 @@ class Simulator:
         returnCode, handle = vrep.simxGetObjectHandle(
                 self.clientId, name, vrep.simx_opmode_oneshot_wait)
         if (returnCode != vrep.simx_return_ok) :
-            sys.exit("Unable to receive handle")
+            sys.exit("Unable to receive handle "+ name)
             
         return handle
     

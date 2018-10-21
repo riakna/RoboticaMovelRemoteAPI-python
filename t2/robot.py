@@ -8,8 +8,9 @@ Created on Wed Sep 12 10:34:58 2018
 import numpy as np
 from simulator import Simulator
 import time
-from controllers import OAFController
-from controller_util import PIDController
+from controllers import OAFController, PIDController
+from subsumption import SubsumptionStrategy
+from behaviors import AvoidObstaclesFuzzy, FollowLeftWallPID, FollowRightWallPID
 
 class Robot:
 
@@ -114,11 +115,16 @@ class Robot:
         self.motorW[0] = 0
         self.motorW[1] = 0
         
+        # Controllers
+        self.wallFollowPID = PIDController(0.4, 1, 0, 2, windowSize=1000)
+        self.obstacleAvoidFuzzy = OAFController()
         
-        # Behaivors
+        self.subsumptionStrategy = SubsumptionStrategy()
+        self.subsumptionStrategy.add(AvoidObstaclesFuzzy(self))
+        self.subsumptionStrategy.add(FollowLeftWallPID(self))
+        self.subsumptionStrategy.add(FollowRightWallPID(self))
         
-        #self.oafCtrl = OAFController()
-        
+
     
     ### -----------
     ### DRIVE  
@@ -243,61 +249,6 @@ class Robot:
         self.odometryPosOrn['compass'] = self._computeOdometry(
                 self.odometryPosOrn['compass'], thetaL, thetaR, deltaTheta)
         
-        
-    ### -----------
-    ### BEHAVIORS  
-    
-    def avoidObstacles(self):
-        
-        distancesL = []
-        
-        for i in range(1, 4):
-            state, distance = self.sim.readProximitySensor(self.sonarHandle[i])
-            if (state == True):
-                distancesL.append(distance*np.cos(self.SONAR_ANGLES[i]))
-            else:
-                distancesL.append(np.inf)
-                
-        distancesR = []
-        
-        for i in range(4, 7):
-            state, distance = self.sim.readProximitySensor(self.sonarHandle[i])
-            if (state == True):
-                distancesR.append(distance*np.cos(self.SONAR_ANGLES[i]))
-            else:
-                distancesR.append(np.inf)
-                
-        vLinear, vAngular = self.oafCtrl.compute(np.min(distancesL), np.min(distancesR))
-        
-        print(vLinear, vAngular)
-        
-        self.drive(10*vLinear, 100*vAngular)
-        
-    def followWall(self, left):
-        
-        if (left):
-            sonarId = 0
-        else:
-            sonarId = 8
-            
-        state, distance = self.sim.readProximitySensor(self.sonarHandle[sonarId])
-        if (state == False):
-            distance = np.inf
-            
-    
-        pid_test = PIDController(0.3, 2, 0.05, 20, windowSize=10)
-        
-        if (left):
-            value = -pid_test.compute(distance)
-        else:
-            value = pid_test.compute(distance)
-        
-        print (distance, value)
-        
-        self.drive(10, 5*value)
-    
-        
-        
     ### -----------
     ### GETTERS  
     
@@ -326,8 +277,59 @@ class Robot:
     
     def getLinearVelocity(self):
         return np.linalg.norm(self.sim.getObjectVelocity(self.robotHandle)[1][2])
-
-
+    
+    
+    ### -----------------
+    ### BEHAVIORS ACTIONS
+    
+    def avoidObstaclesFuzzy(self):
+        
+        distancesL = []
+        
+        for i in range(1, 4):
+            state, distance = self.sim.readProximitySensor(self.sonarHandle[i])
+            if (state == True):
+                distancesL.append(np.abs(distance*np.cos(self.SONAR_ANGLES[i])))
+            else:
+                distancesL.append(1)
+                
+        distancesR = []
+        
+        for i in range(4, 7):
+            state, distance = self.sim.readProximitySensor(self.sonarHandle[i])
+            if (state == True):
+                distancesR.append(np.abs(distance*np.cos(self.SONAR_ANGLES[i])))
+            else:
+                distancesR.append(1)
+                
+        vLinear, vAngular = self.obstacleAvoidFuzzy.compute(10*np.min(distancesL), 10*np.min(distancesR))
+        self.drive(10*vLinear, 20*vAngular)
+        
+    def followWallPID(self, left):
+        
+        if (left):
+            sonarId = 0
+        else:
+            sonarId = 8
+            
+        state, distance = self.sim.readProximitySensor(self.sonarHandle[sonarId])
+        if (state == False):
+            distance = 0.8
+            
+        value = self.wallFollowPID.compute(distance)
+        
+        if (left):
+            self.move(1+value, 1-value)
+        else:
+            self.move(1-value, 1+value)
+    
+    
+    ### -----------
+    ### BEHAVIORS  
+    def stepSubsumptionStrategy(self):
+        if (self.subsumptionStrategy.step() == False):
+            self.move(1, 1)
+        
 def localToGlobal(posOrnSource, pos):
     x, y, angle = posOrnSource
     
