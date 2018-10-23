@@ -17,6 +17,45 @@ from util import plot
 import time
 
 
+#%% Gotogoal test
+# Start Delete Here
+from robot import Robot
+from util import Map
+#from util import GraphData
+#from util import plot
+
+import time
+# End Delete Here
+
+robot = Robot()
+mapPoints = Map()
+t = time.time()
+Y = []
+X = []
+
+while (time.time()-t) < 60:
+        
+    laser_point_cloud = robot.readLaser()
+    laser_point_cloud = laser_point_cloud[:,:2]
+    for x in range(len(laser_point_cloud)):
+        mapPoints.addPoint('obstaclesLaser', *robot.localToGlobalGT(laser_point_cloud[x]))
+    
+    #Show points to plot
+    output = robot.GoToGoal(0,0)   # Insert goal X,Y
+    Y.append(output[0])
+    X.append(time.time()-t)
+    
+    #Just control robot
+    #robot.followWallPID(True)
+    
+    time.sleep(0.01)
+    robot.computeOdometryEncoder()
+     
+    mapPoints.addPoint('robotPathGT', *robot.getPosOrn()[:2])
+    mapPoints.addPoint('robotPathEncoder', *robot.getPosOrnOdometyEncoder()[:2])
+    
+    
+    
 #%% Obstacle fuzzy test
 
 robot = Robot()
