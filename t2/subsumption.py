@@ -86,8 +86,8 @@ class SubsumptionStrategy():
         behavior = self.find_next_active_behavior()
         if behavior is not None:
             self.behaviors[behavior].action()
-            return True
-        return False
+            return behavior
+        return None
 
     def find_next_active_behavior(self):
         """

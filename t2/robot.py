@@ -11,6 +11,7 @@ import time
 from controllers import OAFController, PIDController
 from subsumption import SubsumptionStrategy
 from behaviors import AvoidObstaclesFuzzy, FollowLeftWallPID, FollowRightWallPID
+import math
 
 class Robot:
 
@@ -118,6 +119,8 @@ class Robot:
         # Controllers
         self.wallFollowPID = PIDController(0.4, 1, 0, 2, windowSize=1000)
         self.obstacleAvoidFuzzy = OAFController()
+        self.GoToGoalPID = PIDController(0.1, 4, 0.2, 0.4, windowSize=1000)
+        self.AnglePID = PIDController(0.4, 1, 0, 2, windowSize=1000)   
         
         self.subsumptionStrategy = SubsumptionStrategy()
         self.subsumptionStrategy.add(AvoidObstaclesFuzzy(self))
@@ -318,10 +321,15 @@ class Robot:
             
         value = self.wallFollowPID.compute(distance)
         
+        value1 = 5 *( 1+value)
+        value2 = 5 *( 1-value)
+        
         if (left):
-            self.move(1+value, 1-value)
+            self.move(value1, value2)
         else:
-            self.move(1-value, 1+value)
+            self.move(value2, value1)
+            
+        return distance
     
     
     def GoToGoal(self,x_final,y_final):
@@ -387,8 +395,11 @@ class Robot:
     ### -----------
     ### BEHAVIORS  
     def stepSubsumptionStrategy(self):
-        if (self.subsumptionStrategy.step() == False):
+        strategy = self.subsumptionStrategy.step()
+        if (strategy is None):
             self.move(1, 1)
+            
+        return strategy
         
 def localToGlobal(posOrnSource, pos):
     x, y, angle = posOrnSource

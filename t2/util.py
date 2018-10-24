@@ -103,4 +103,40 @@ def plot(graphDataList, legendList=[], title="", xLabel="", yLabel = ""):
     
     
     
+class NewMap(Savable):
+    
+    def __init__(self, data):
+        self.data = data
+        
+    def plotAll(self):        
+        
+        for value in self.data:
+            if (len(value)>0):
+                pointsNp = np.array(value)
+                plt.scatter(pointsNp[:,0], pointsNp[:,1], s=5)
+
+        plt.show()
+        
+    def saveFig(self, name,  color, label, s):
+        
+        fig, ax = plt.subplots(dpi=150)
+
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.axis('off')
+        
+        patches = []
+    
+        for i, value in enumerate(self.data):
+            if (len(value)>0):
+                pointsNp = np.array(value)
+                ax.scatter(pointsNp[:,0], pointsNp[:,1], color=color[i], s=s[i])
+                patches.append(mpatches.Patch(color=color[i], label=label[i]))
+                
+        ax.legend(handles=patches,loc='upper right', fontsize='x-small')
+
+        fig.tight_layout()
+
+        plt.savefig(name+'.png',  bbox_inches='tight')
+    
+    
     

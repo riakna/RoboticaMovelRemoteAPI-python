@@ -6,6 +6,7 @@ Created on Sat Oct 20 18:17:23 2018
 """
 
 from subsumption import Behavior
+import numpy as np
 
 class AvoidObstaclesFuzzy(Behavior):
         
@@ -14,14 +15,25 @@ class AvoidObstaclesFuzzy(Behavior):
     
     def check(self):
         
-        state, distanceL = self.robot.sim.readProximitySensor(self.robot.sonarHandle[3])
-        if (state == False):
-            distanceL = 1
-        state, distanceR = self.robot.sim.readProximitySensor(self.robot.sonarHandle[4])
-        if (state == False):
-            distanceR = 1
-            
-        if distanceL < 0.8 or distanceR < 0.8:
+        distancesL = []
+        
+        for i in range(1, 4):
+            state, distance = self.robot.sim.readProximitySensor(self.robot.sonarHandle[i])
+            if (state == True):
+                distancesL.append(np.abs(distance*np.cos(self.robot.SONAR_ANGLES[i])))
+            else:
+                distancesL.append(1)
+                
+        distancesR = []
+        
+        for i in range(4, 7):
+            state, distance = self.robot.sim.readProximitySensor(self.robot.sonarHandle[i])
+            if (state == True):
+                distancesR.append(np.abs(distance*np.cos(self.robot.SONAR_ANGLES[i])))
+            else:
+                distancesR.append(1)
+    
+        if np.min(distancesL) < 0.6 or np.min(distancesR) < 0.6:
             return True
         
         return False

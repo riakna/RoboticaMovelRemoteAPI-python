@@ -6,7 +6,7 @@ Created on Wed Sep 12 10:44:52 2018
 """
 
 from robot import Robot
-from util import Map
+from util import Map, NewMap
 import controllers
 import time
 import numpy as np
@@ -41,7 +41,7 @@ while (time.time()-t) < 60:
         mapPoints.addPoint('obstaclesLaser', *robot.localToGlobalGT(laser_point_cloud[x]))
     
     #Show points to plot
-    output = robot.GoToGoal(0,0)   # Insert goal X,Y
+    output = robot.GoToGoal(5,-0.85)   # Insert goal X,Y
     Y.append(output[0])
     X.append(time.time()-t)
     
@@ -98,12 +98,10 @@ while (time.time()-t) < 40:
         mapPoints.addPoint('obstaclesLaser', *robot.localToGlobalGT(laser_point_cloud[x]))
     
     output = robot.followWallPID(True)
-    Y.append(output[0])
+    Y.append(output)
     X.append(time.time()-t)
     
-    time.sleep(0.01)
-    robot.followWall()
-    
+    time.sleep(0.01)    
     robot.computeOdometryEncoder()
      
     mapPoints.addPoint('robotPathGT', *robot.getPosOrn()[:2])
@@ -121,23 +119,44 @@ robot.stop()
 #%% Subsumptions test
 
 robot = Robot()
-mapPoints = Map()
 t = time.time()
 
-while (time.time()-t) < 40:
+pointsGTStNone = []
+pointsGTSt0 = []
+pointsGTSt1 = []
+pointsLaser = []
+pointsOdometry = []
+
+while (time.time()-t) < 50:
         
     laser_point_cloud = robot.readLaser()
     laser_point_cloud = laser_point_cloud[:,:2]
     for x in range(len(laser_point_cloud)):
-        mapPoints.addPoint('obstaclesLaser', *robot.localToGlobalGT(laser_point_cloud[x]))
+        pointsGTSt1.append((*robot.localToGlobalGT(laser_point_cloud[x]),))
         
     time.sleep(0.01)
-    robot.stepSubsumptionStrategy()
+    
+    st = robot.stepSubsumptionStrategy()
+    
+    posGt = (*robot.getPosOrn()[:2],)
+    posOdo = (*robot.getPosOrnOdometyEncoder()[:2],)
+
+    if (st is None):
+        pointsGTStNone.append(posGt)
+    elif (st == 0):
+        pointsGTSt0.append(posGt)
+    elif (st == 1):
+        pointsGTSt1.append(posGt)
     
     robot.computeOdometryEncoder()
-     
-    mapPoints.addPoint('robotPathGT', *robot.getPosOrn()[:2])
-    mapPoints.addPoint('robotPathEncoder', *robot.getPosOrnOdometyEncoder()[:2])
+    
+    pointsOdometry.append(posOdo)
+    
+#%%
+newMap = NewMap([pointsGTStNone, pointsGTSt0, pointsGTSt1, pointsLaser, pointsOdometry])
+newMap.plotAll()
 
 robot.stop()
+
+
 
