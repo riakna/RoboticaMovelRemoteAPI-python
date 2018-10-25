@@ -17,7 +17,7 @@ class AvoidObstaclesFuzzy(Behavior):
         
         distancesL = []
         
-        for i in range(1, 4):
+        for i in range(2, 4):
             state, distance = self.robot.sim.readProximitySensor(self.robot.sonarHandle[i])
             if (state == True):
                 distancesL.append(np.abs(distance*np.cos(self.robot.SONAR_ANGLES[i])))
@@ -26,14 +26,14 @@ class AvoidObstaclesFuzzy(Behavior):
                 
         distancesR = []
         
-        for i in range(4, 7):
+        for i in range(4, 6):
             state, distance = self.robot.sim.readProximitySensor(self.robot.sonarHandle[i])
             if (state == True):
                 distancesR.append(np.abs(distance*np.cos(self.robot.SONAR_ANGLES[i])))
             else:
                 distancesR.append(1)
     
-        if np.min(distancesL) < 0.6 or np.min(distancesR) < 0.6:
+        if np.min(distancesL) < 0.35 or np.min(distancesR) < 0.35:
             return True
         
         return False
@@ -73,7 +73,7 @@ class FollowRightWallPID(Behavior):
     
     def check(self):
         
-        state, distance = self.robot.sim.readProximitySensor(self.robot.sonarHandle[8])
+        state, distance = self.robot.sim.readProximitySensor(self.robot.sonarHandle[7])
         if (state == False):
             distance = 1
             

@@ -118,28 +118,32 @@ robot.stop()
 
 #%% Subsumptions test
 
+from robot import Robot
+import time
+
+import time
+
 robot = Robot()
 t = time.time()
 
 pointsGTStNone = []
 pointsGTSt0 = []
 pointsGTSt1 = []
+pointsGTSt2 = []
 pointsLaser = []
-pointsOdometry = []
 
-while (time.time()-t) < 50:
+while (time.time()-t) < 90:
         
     laser_point_cloud = robot.readLaser()
     laser_point_cloud = laser_point_cloud[:,:2]
     for x in range(len(laser_point_cloud)):
-        pointsGTSt1.append((*robot.localToGlobalGT(laser_point_cloud[x]),))
+        pointsLaser.append((*robot.localToGlobalGT(laser_point_cloud[x]),))
         
     time.sleep(0.01)
     
     st = robot.stepSubsumptionStrategy()
     
     posGt = (*robot.getPosOrn()[:2],)
-    posOdo = (*robot.getPosOrnOdometyEncoder()[:2],)
 
     if (st is None):
         pointsGTStNone.append(posGt)
@@ -147,16 +151,20 @@ while (time.time()-t) < 50:
         pointsGTSt0.append(posGt)
     elif (st == 1):
         pointsGTSt1.append(posGt)
+    elif (st == 2):
+        pointsGTSt2.append(posGt)
     
-    robot.computeOdometryEncoder()
-    
-    pointsOdometry.append(posOdo)
+        
+robot.stop()
+
     
 #%%
-newMap = NewMap([pointsGTStNone, pointsGTSt0, pointsGTSt1, pointsLaser, pointsOdometry])
-newMap.plotAll()
+#from util import NewMap
 
-robot.stop()
+#newMap = NewMap([pointsGTStNone, pointsGTSt0, pointsGTSt1, pointsGTSt2, pointsLaser])
+#newMap.plotAll()
+#newMap.saveData("dados/sub_map")
+
 
 
 

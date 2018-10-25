@@ -4,9 +4,7 @@ Created on Tue Sep 18 15:32:45 2018
 
 @author: Anderson
 """
-from util import Map
-from util import GraphData
-from util import plot
+from util import *
 
 #%%############################
 # ========= Mapas ============# 
@@ -32,6 +30,20 @@ mapPoints.saveFig("imagens/map_wf_pid1",
                   ['black', 'red', 'blue'],
                   ['Pontos detectados pelo sensor laser', 'Caminho do robo GT', 'Caminho estimado pela odometria encoder'],
                   [2, 1, 1])
+
+
+#%%
+from util import Map
+
+newMap = NewMap.loadData('dados/sub_map')
+
+newMap.saveFig("imagens/sub_map",  
+                  ['gray', 'red', 'green', 'yellow', 'black'],
+                  ['Sem estratégia', 'Desvio obstáculos', 'Seguidor parede esquerda', 'Seguidor parede direita', 'Pontos detectados pelo sensor laser'],
+                  [1, 10, 1, 1, 1])
+#([pointsGTStNone, pointsGTSt0, pointsGTSt1, pointsGTSt2, pointsLaser])
+#newMap.plotAll()
+#newMap.saveData("dados/sub_map")
 
 
 #%%############################

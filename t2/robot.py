@@ -313,7 +313,7 @@ class Robot:
         if (left):
             sonarId = 0
         else:
-            sonarId = 8
+            sonarId = 7
             
         state, distance = self.sim.readProximitySensor(self.sonarHandle[sonarId])
         if (state == False):
@@ -321,8 +321,8 @@ class Robot:
             
         value = self.wallFollowPID.compute(distance)
         
-        value1 = 5 *( 1+value)
-        value2 = 5 *( 1-value)
+        value1 = 2 *( 1+value)
+        value2 = 2 *( 1-value)
         
         if (left):
             self.move(value1, value2)
@@ -397,7 +397,7 @@ class Robot:
     def stepSubsumptionStrategy(self):
         strategy = self.subsumptionStrategy.step()
         if (strategy is None):
-            self.move(1, 1)
+            self.move(2, 2)
             
         return strategy
         
