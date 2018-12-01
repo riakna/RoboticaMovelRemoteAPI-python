@@ -9,7 +9,6 @@ Created on Mon Oct  8 10:27:03 2018
 import numpy as np
 import skfuzzy as fuzz
 from skfuzzy import control as ctrl
-import matplotlib.pyplot as plt
 
 import time
 
@@ -273,12 +272,4 @@ class WFFController:
         self.fuzzySystemSim.compute()
                 
         return self.fuzzySystemSim.output['left_speed'], self.fuzzySystemSim.output['right_speed']
-
-#test = OAFController()
-#test = WFFController()
-#test.viewGrahs()
-
-#print(test.compute(0.3, 0.8, np.inf))
-#test.viewGrahs()
-#plt.show()
 
