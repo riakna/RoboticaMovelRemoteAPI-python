@@ -11,6 +11,7 @@ from robot import Robot
 import matplotlib.pyplot as plt
 from imageio import imwrite
 from mapping import GridMap
+from cell_decomposition import CellDecomposition
 
 
 import vrep
@@ -31,7 +32,9 @@ x, y, _ = robot.getPosOrn()
 x, y = gridMap.convertToMapUnit(x, y)
 gridMap.removeCluster(x, y)
 
-        
+yd, xd = gridMap.convertToMapUnit(-2.77, 5.77)
+
+CellDecomposition(gridMap, (x,y), (xd,yd), 20)    
         
 vrep.simxFinish(-1)
 
