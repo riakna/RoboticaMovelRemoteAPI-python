@@ -8,9 +8,8 @@ Created on Wed Sep 12 10:34:58 2018
 import numpy as np
 from simulator import Simulator
 import time
-from controllers import OAFController, PIDController
-from subsumption import SubsumptionStrategy
-from behaviors import AvoidObstaclesFuzzy, FollowLeftWallPID, FollowRightWallPID
+from mapping import GridMap
+from controllers import PIDController
 import math
 
 class Robot:
@@ -34,13 +33,11 @@ class Robot:
     R = None
     
     # Map Ground truth
-    mapImage = None
-    MAP_ORTHO_SIZE = 1500
-    MAP_RES = 512
+    gridMap = None
     
-    def __init__(self):
+    def __init__(self, extendArea):
 
-        self.sim = Simulator('127.0.0.1', 25000)
+        self.sim = Simulator('127.0.0.1', 25001)
         self.sim.connect()        
         ### -----------
         ### GET HANDLES
@@ -122,34 +119,21 @@ class Robot:
         self.motorW[1] = 0
         
         
-        
+        # Map grid
         x, y, _ = self.getPosOrn()
-        self.mapImage = self.sim.getVisionSensorImageBlock(self.sim.getHandle('mapSensor'))
-        
-        
-        
-        
-        
-        
-        ## Re
+        mapImage = self.sim.getVisionSensorImageBlock(self.sim.getHandle('mapSensor'))
+        self.gridMap = GridMap(mapImage, extendArea)
+        x, y, _ = self.getPosOrn()
+        x, y = self.gridMap.convertToMapUnit(x, y)
+        self.gridMap.removeCluster(x, y)
+        self.gridMap.show()
         
     
         # Controllers
-        
-        """
-        self.wallFollowPID = PIDController(0.4, 1, 0, 2, windowSize=1000)
-        self.obstacleAvoidFuzzy = OAFController()
-        self.GoToGoalPID = PIDController(0.1, 4, 0.2, 0.4, windowSize=1000)
-        self.AnglePID = PIDController(0.4, 1, 0, 2, windowSize=1000)   
-        
-        self.subsumptionStrategy = SubsumptionStrategy()
-        self.subsumptionStrategy.add(AvoidObstaclesFuzzy(self))
-        self.subsumptionStrategy.add(FollowLeftWallPID(self))
-        self.subsumptionStrategy.add(FollowRightWallPID(self))
-        
-        """
+        self.goToGoalPID = PIDController(0, 50, 0, 15, windowSize=1000)
+        self.anglePID = PIDController(0, 10, 0, 10, windowSize=1000)   
 
-    
+
     ### -----------
     ### DRIVE  
     
@@ -302,125 +286,88 @@ class Robot:
     def getLinearVelocity(self):
         return np.linalg.norm(self.sim.getObjectVelocity(self.robotHandle)[1][2])
     
+    ### -----------------
+    ### Path Planning
+
+    def potentialPlanningOffline(self, gx, gy):
+        self.gridMap.calcPotentialMap(gx, gy)
+        x, y, _ = self.getPosOrn()
+        x, y = self.gridMap.convertToMapUnit(x, y)
+        self.pathPlanning = self.gridMap.calcPotentialPath(x, y)
+        return [self.gridMap.convertToReal(*pos) for pos in self.pathPlanning]
+        
+    def potentialAStarPlanningOffline(self, gx, gy):
+        self.gridMap.calcPotentialMap(gx, gy)
+        x, y, _ = self.getPosOrn()
+        x, y = self.gridMap.convertToMapUnit(x, y)
+        self.pathPlanning = self.gridMap.calcPotentialAStarPath(x, y, gx, gy) 
+    
+        return [self.gridMap.convertToReal(*pos) for pos in self.pathPlanning]
+
+    def doPlanning(self):
+        if (len(self.pathPlanning)):
+            nextStep = self.pathPlanning[0]
+            x, y = self.gridMap.convertToReal(*nextStep)
+            distance = self.goToGoal(x, y)
+            if (distance<0.2):
+                self.pathPlanning = self.pathPlanning[1:]
+            return True
+        else:
+            self.stop()
+            return False
+        
+        
+        
     
     ### -----------------
     ### BEHAVIORS ACTIONS
-    
-    def avoidObstaclesFuzzy(self):
-        
-        distancesL = []
-        
-        for i in range(1, 4):
-            state, distance = self.sim.readProximitySensor(self.sonarHandle[i])
-            if (state == True):
-                distancesL.append(np.abs(distance*np.cos(self.SONAR_ANGLES[i])))
-            else:
-                distancesL.append(1)
-                
-        distancesR = []
-        
-        for i in range(4, 7):
-            state, distance = self.sim.readProximitySensor(self.sonarHandle[i])
-            if (state == True):
-                distancesR.append(np.abs(distance*np.cos(self.SONAR_ANGLES[i])))
-            else:
-                distancesR.append(1)
-                
-        vLinear, vAngular = self.obstacleAvoidFuzzy.compute(10*np.min(distancesL), 10*np.min(distancesR))
-        self.drive(10*vLinear, 20*vAngular)
-        
-    def followWallPID(self, left):
-        
-        if (left):
-            sonarId = 0
-        else:
-            sonarId = 7
-            
-        state, distance = self.sim.readProximitySensor(self.sonarHandle[sonarId])
-        if (state == False):
-            distance = 0.8
-            
-        value = self.wallFollowPID.compute(distance)
-        
-        value1 = 2 *( 1+value)
-        value2 = 2 *( 1-value)
-        
-        if (left):
-            self.move(value1, value2)
-        else:
-            self.move(value2, value1)
-            
-        return distance
-    
-    
-    def GoToGoal(self,x_final,y_final):
+    def goToGoal(self,x_final,y_final):
         
         # Get actual position
         x, y, orn = self.getPosOrn()
-        #print('x: ',x)
-        #print('y: ',y)
         
         # Compute angle to objective
         orn_final = math.atan2((y_final-y),(x_final-x))
-        
+
         # PID control to adjust velocity to final objective
         distance = math.sqrt((x_final-x)**2+(y_final-y)**2)
-        value = self.GoToGoalPID.compute(distance)
+        linearVelocity = -self.goToGoalPID.compute(distance)
+        
         
         # PID control to adjust angular velocity to correct angle
         angle = orn - orn_final
-        angle_correction = self.AnglePID.compute(angle)
         
-        # Limit PID distance values
-        if(value>+8):
-            value = 8
-        elif(value<-8):
-            value = -8
-        else:
-            value = value
+        if angle > np.pi:
+            angle = angle - 2 * np.pi
+        elif angle < -np.pi:
+            angle = angle + 2 * np.pi
             
-        # Limit PID angle values
-        if(angle_correction>+2):
-            angle_correction = 2
-        elif(angle_correction<-2):
-            angle_correction = -2
-        else:
-            angle_correction = angle_correction           
+        angleVelocity = self.anglePID.compute(angle)
+        
+        
+                
+        # Limit PID
+        if (linearVelocity > 10):
+            linearVelocity = 10
+                                
+        # Linear velocity should be smaller if it's not in correct direction
+        linearVelocity = (np.cos(angle)**15) * linearVelocity
+        
+        if (linearVelocity < 0):
+            linearVelocity = 0
+        
+        # Limit PID
+        if (angleVelocity > 10):
+            angleVelocity = 10
+        elif (angleVelocity < -10):
+            angleVelocity = -10      
             
-        #print('Distance: ',distance)
-        print('PID: ',value)
         
-        # Orientation control
-        if(distance>0.05):
-            if (orn > orn_final - 0.2 and orn < orn_final + 0.2):
-                #self.move(-value,-value)
-                if (orn < orn_final):
-                    self.move(-angle_correction-value,+angle_correction-value)
-                else:
-                    self.move(+angle_correction-value,-angle_correction-value)                  
-            else:
-                if (orn < orn_final):
-                    self.move(-angle_correction,+angle_correction)
-                else:
-                    self.move(+angle_correction,-angle_correction) 
-        
-        else:
-            self.stop()                    
-        
-        # Delete or modify to plot something interesting
-        sonarId = 0        
-        state, distance = self.sim.readProximitySensor(self.sonarHandle[sonarId])
-        return distance, value
+        self.drive(5 * linearVelocity, 10 * angleVelocity)  
     
+        return distance            
     
-    ### -----------
-    ### BEHAVIORS  
-    def stepSubsumptionStrategy(self):
-        strategy = self.subsumptionStrategy.step()
-        if (strategy is None):
-            self.move(2, 2)
-            
-        return strategy
+
         
 def localToGlobal(posOrnSource, pos):
     x, y, angle = posOrnSource

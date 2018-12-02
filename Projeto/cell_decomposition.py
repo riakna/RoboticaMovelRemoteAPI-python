@@ -18,7 +18,7 @@ class Cell():
         self.parent = None
 
     def calculateCenter(self,origin, height, weight):
-        return (origin[0]+height/2, origin[1]+weight/2)
+        return (origin[0]+height//2, origin[1]+weight//2)
 
     def calculateHeuristic(self,target):
         (x1, y1) = self.center
@@ -71,21 +71,23 @@ class Graph():
         self.graph_map[id].recalculateCost(cost)
 
 class CellDecomposition():
-    def __init__(self, grid_map, origin_point, destiny_point, size):
+    def __init__(self, grid_map, origin_point, destiny_point, cell_size, map_size):
     
         self.graph = Graph()
         self.grid_map = grid_map
-        self.size = size
-
+        self.cell_size = cell_size
+        self.map_size = map_size
         num_cell = 0
-        for i in range(0, 500, self.size):
-            for j in range(0, 500, self.size):
-                num_cell += 1
-                cell = Cell(grid_map.gridMap[i:i+self.size,j:j+self.size], self.size, self.size, (i,j), destiny_point, 0, num_cell, 500)
-                self.graph.addNode(cell)
         
+        plt.show(block = False)
+        for i in range(0, map_size, self.cell_size):
+            for j in range(0, map_size, self.cell_size):
+                num_cell += 1
+                cell = Cell(grid_map.gridMap[i:i+self.cell_size,j:j+self.cell_size], self.cell_size, self.cell_size, (i,j), destiny_point, 0, num_cell, map_size)
+                self.graph.addNode(cell)
+                
         path = self.a_star(origin_point, destiny_point)
-        print("path", path)
+        #print("path", path)
 
         for i in range(len(path)):
             plt.scatter(path[i][1], path[i][0], s=1, color='r')
@@ -96,8 +98,9 @@ class CellDecomposition():
     def findInitialNode(self, start):
         initialNode = None
         for node in self.graph.graph_map.values():
-            if ((abs(node.center[0] - start[1]) < self.size/2) and (abs(node.center[1] - start[0]) < self.size/2)):
+            if ((abs(node.center[0] - start[0]) < self.cell_size/2) and (abs(node.center[1] - start[1]) < self.cell_size/2)):
                 initialNode = node
+                
         initialNode.movement_cost = 0
         initialNode.heuristic = 0
         initialNode.total_cost = 0
@@ -107,9 +110,9 @@ class CellDecomposition():
     def findFinalNode(self, end):
         finalNode = None
         for node in self.graph.graph_map.values():
-            if ((abs(node.center[0] - end[0]) < self.size/2) and (abs(node.center[1] - end[1]) < self.size/2)):
+            if ((abs(node.center[0] - end[0]) < self.cell_size/2) and (abs(node.center[1] - end[1]) < self.cell_size/2)):
                 finalNode = node
-
+                
         finalNode.movement_cost = 0
         finalNode.heuristic = 0
         finalNode.total_cost = 0
