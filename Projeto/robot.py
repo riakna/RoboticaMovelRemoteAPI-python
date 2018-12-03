@@ -321,6 +321,63 @@ class Robot:
     
     ### -----------------
     ### BEHAVIORS ACTIONS
+    def FollowPath(self,x_final,y_final):
+        
+        # Get actual position
+        x, y, orn = self.getPosOrn()
+        #print('x: ',x)
+        #print('y: ',y)
+        
+        # Compute angle to objective
+        orn_final = math.atan2((y_final-y),(x_final-x))
+        
+        # PID control to adjust velocity to final objective
+        distance = math.sqrt((x_final-x)**2+(y_final-y)**2)
+        value = self.GoToGoalPID.compute(distance)
+        
+        # PID control to adjust angular velocity to correct angle
+        angle = orn - orn_final
+        angle_correction = self.AnglePID.compute(angle)
+        
+        # Limit PID distance values
+        if(value>+2):
+            value = 2
+        elif(value<-2):
+            value = -2
+        else:
+            value = value
+            
+        # Limit PID angle values
+        if(angle_correction>+2):
+            angle_correction = 2
+        elif(angle_correction<-2):
+            angle_correction = -2
+        else:
+            angle_correction = angle_correction           
+            
+        # Orientation control
+        if(distance>0.5): #0.05
+            if (orn > orn_final - 0.5 and orn < orn_final + 0.5): #0.2
+                #self.move(-value,-value)
+                if (orn < orn_final):
+                    self.move(-angle_correction-value,+angle_correction-value)
+                else:
+                    self.move(+angle_correction-value,-angle_correction-value)                  
+            else:
+                if (orn < orn_final):
+                    self.move(-angle_correction,+angle_correction)
+                    #print("-+")
+                else:
+                    self.move(+angle_correction,-angle_correction) 
+                    #print("+-")
+            Arrived = 'false'  
+        else:
+            #self.stop()
+            Arrived = 'true'                    
+        return Arrived        
+    
+    
+    
     def goToGoal(self,x_final,y_final):
         
         # Get actual position

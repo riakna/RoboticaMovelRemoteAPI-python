@@ -1,3 +1,94 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Sep 12 10:44:52 2018
+
+@author: Willian Beneducci
+"""
+## Extrai mapa, define o RoadMap e realiza o FollowPath
+## Pre-req: executar mazeScene
+
+from robot import Robot
+import matplotlib.pyplot as plt
+from imageio import imwrite
+from mapping import GridMap
+from probabilistic_road_map import PRM
+from util import Map
+from util import GraphData
+from util import plot
+
+import vrep
+import time
+
+#Create Objects
+robot = Robot()
+image = robot.mapImage
+PRM_Object = PRM()
+
+#FollowPath Variables
+t = time.time()
+Y = []
+X = []
+rx_real = []
+ry_real = []
+n = 0
+
+#Compute Roadmap
+rx,ry = PRM.compute(PRM_Object,image)
+
+gridMap = GridMap(image)
+gridMap.show()
+
+x, y, _ = robot.getPosOrn()
+x, y = gridMap.convertToMapUnit(x, y)
+
+#Remove ocupação do robô
+gridMap.removeCluster(x, y)
+
+# FollowPath
+while (time.time()-t) < 120:
+        
+    #laser_point_cloud = robot.readLaser()
+    #laser_point_cloud = laser_point_cloud[:,:2]
+    #for x in range(len(laser_point_cloud)):
+        #mapPoints.addPoint('obstaclesLaser', *robot.localToGlobalGT(laser_point_cloud[x]))
+    
+    #Convert values
+    rx_real = (rx[len(rx)-n-1]-100)/33.33-4.5
+    ry_real = (ry[len(ry)-n-1]-15)/34.64-7
+    
+    #Show points to plot    
+    output = robot.FollowPath(rx_real,ry_real)
+    #print(rx_real , ry_real)
+    if(output == 'true'):
+        print('Arrived: ',n)
+        n = n + 1
+
+    # GT
+    #x,y,orn = robot.getPosOrn()
+    #X.append(x)
+    #Y.append(y)  
+     
+    """     
+    # Encoder
+    
+    x,y,orn = robot.getPosOrnOdometyEncoder()
+    I.append(x)
+    J.append(y)   
+    """
+        
+    #Just control robot
+    #robot.followWallPID(True)
+    
+    time.sleep(0.05)
+    #robot.computeOdometryEncoder()
+     
+    #mapPoints.addPoint('robotPathGT', *robot.getPosOrn()[:2])
+    #mapPoints.addPoint('robotPathEncoder', *robot.getPosOrnOdometyEncoder()[:2])
+    
+robot.stop()
+
+        
+vrep.simxFinish(-1)
 
 #%%
 ## Teste potentialPlanning
